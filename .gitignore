@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# PHPUnit / CI local artefacts
+/vendor/
+/node_modules/
+/.phpunit.result.cache
