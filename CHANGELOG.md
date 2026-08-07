@@ -2,6 +2,20 @@
 
 All notable changes to `local_stackanalytics` are documented here.
 
+## CI fix (post-Phase 8)
+
+- `.github/workflows/ci.yml`'s first real run failed at plugin install with
+  "maxima_opt_auto creation failed" — traced to `question/type/stack/db/install.php`:
+  qtype_stack unconditionally tries to build an optimised Maxima image
+  whenever `PHPUNIT_TEST` is true (moodle-plugin-ci's own phpunit-init
+  sub-step), and no `maxima` binary was installed anywhere in the workflow.
+  Fixed by installing Ubuntu's packaged `maxima` (`--no-install-recommends`,
+  to skip the TeX Live pull-in that the plain package recommends) before the
+  plugin-install step — simpler than the real qtype_stack project's own CI,
+  which pins a specific Maxima build via sourceforge `.deb` downloads, but
+  sufficient since `connectorhelper.class.php`'s Lisp-backend detection
+  reads whatever Maxima reports rather than assuming a specific build.
+
 ## [0.1.0] — Phase 0
 
 - Initial plugin skeleton: `version.php`, `lib.php`, `settings.php`, `db/access.php`,

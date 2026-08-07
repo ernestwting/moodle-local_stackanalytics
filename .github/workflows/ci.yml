@@ -32,6 +32,28 @@ jobs:
         database: [pgsql]
 
     steps:
+      # qtype_stack's own db/install.php unconditionally tries to build an
+      # optimised Maxima image whenever PHPUNIT_TEST is true (which it is
+      # during moodle-plugin-ci's own phpunit-init sub-step), throwing a
+      # coding_exception if no working `maxima` binary is available — this
+      # is exactly what failed in run #2 of this workflow ("maxima_opt_auto
+      # creation failed. Time taken = 0"). Confirmed by reading
+      # question/type/stack/db/install.php directly, not guessed. The real
+      # qtype_stack project's own CI (.github/workflows/moodle-ci.yml)
+      # installs a specific pinned Maxima build via sourceforge .deb files;
+      # this uses Ubuntu's own packaged `maxima` instead, which auto-detects
+      # fine as connectorhelper.class.php's Lisp-backend detection (GCL/
+      # SBCL/CLISP) reads `maxima`'s own build info rather than assuming one.
+      - name: Install Maxima (required by qtype_stack)
+        run: |
+          sudo apt-get update
+          # --no-install-recommends: plain `apt-get install maxima` pulls in
+          # a full TeX Live distribution as a recommended (docs-building)
+          # dependency, which costs several minutes and gigabytes for
+          # something this workflow never uses.
+          sudo apt-get install -y --no-install-recommends maxima
+          echo "diff(x^2, x); quit();" | maxima --very-quiet
+
       - name: Check out this plugin
         uses: actions/checkout@v4
         with:
