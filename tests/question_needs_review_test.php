@@ -25,7 +25,7 @@ defined('MOODLE_INTERNAL') || die();
  *
  * is_valid_analysable() only needs a STACK question to exist, so it's
  * exercised here with a real one via
- * $questiongenerator->create_question('stack', 'test0', ...) (a named
+ * $questiongenerator->create_question('stack', 'test1', ...) (a named
  * qtype_stack_test_helper fixture — see stack_question_analyser_test.php's
  * docblock for the generator API this relies on). calculate_sample()'s
  * pass-rate-threshold logic additionally needs real *attempt* data (finished
@@ -65,7 +65,7 @@ final class question_needs_review_test extends \advanced_testcase {
 
         $questiongenerator = $dg->get_plugin_generator('core_question');
         $cat = $questiongenerator->create_question_category();
-        $question = $questiongenerator->create_question('stack', 'test0', ['category' => $cat->id]);
+        $question = $questiongenerator->create_question('stack', 'test1', ['category' => $cat->id]);
         quiz_add_quiz_question($question->id, $quiz);
 
         $analysable = \core_analytics\course::instance($course);

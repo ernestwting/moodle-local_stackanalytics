@@ -27,11 +27,15 @@ defined('MOODLE_INTERNAL') || die();
  * The quiz/question fixture setup mirrors mod_quiz's own
  * question_helper_test_trait::create_test_quiz() /
  * add_two_regular_questions() (mod/quiz/tests/classes/); the positive-path
- * STACK question uses $questiongenerator->create_question('stack', 'test0', ...),
- * one of qtype_stack_test_helper::get_test_questions()'s named fixtures
- * (question/type/stack/tests/helper.php) — confirmed, not guessed, that
- * core_question_generator::create_question() saves it as a real DB-backed
- * question (question/tests/generator/lib.php).
+ * STACK question uses $questiongenerator->create_question('stack', 'test1', ...) —
+ * 'test1' specifically because create_question() needs a
+ * get_stack_question_form_data_*() method on qtype_stack_test_helper, which
+ * (confirmed against question/type/stack/tests/helper.php) only some named
+ * fixtures implement; others (like the simpler 'test0') only have a
+ * make_stack_question_*() object-constructor for STACK's own internal tests,
+ * which create_question() can't use — this was the exact cause of a real CI
+ * failure ("Method get_stack_question_form_data_test0 does not exist")
+ * before switching to 'test1'.
  *
  * @package local_stackanalytics
  * @copyright  2026 Ernest Ting <eting@caltech.edu>
@@ -74,7 +78,7 @@ final class stack_question_analyser_test extends \advanced_testcase {
 
         $questiongenerator = $dg->get_plugin_generator('core_question');
         $cat = $questiongenerator->create_question_category();
-        $question = $questiongenerator->create_question('stack', 'test0', ['category' => $cat->id]);
+        $question = $questiongenerator->create_question('stack', 'test1', ['category' => $cat->id]);
         quiz_add_quiz_question($question->id, $quiz);
 
         $target = new question_needs_review();

@@ -2,6 +2,23 @@
 
 All notable changes to `local_stackanalytics` are documented here.
 
+## Test fixture fix (post-Phase 8)
+
+- CI run #4 got all the way to PHPUnit and ran all 84 tests, failing only the
+  3 that create a real STACK question via
+  `$questiongenerator->create_question('stack', 'test0', ...)`: "Method
+  get_stack_question_form_data_test0 does not exist on the stack question
+  type test helper class." Confirmed against the real
+  `question/type/stack/tests/helper.php`: `qtype_stack_test_helper` only
+  implements the `get_stack_question_form_data_*()` method
+  `core_question_generator::create_question()` needs for *some* named
+  fixtures (e.g. `'test1'`, `'test3'`) — others, including the simpler
+  `'test0'` this plugin's tests originally used, only have a
+  `make_stack_question_*()` object-constructor for STACK's own internal
+  tests, which `create_question()` can't call. Switched all three affected
+  tests (`student_at_risk_test`, `stack_question_analyser_test`,
+  `question_needs_review_test`) to `'test1'`.
+
 ## CI fixes (post-Phase 8)
 
 - Run #2 failed at plugin install with "maxima_opt_auto creation failed" —

@@ -31,14 +31,18 @@ defined('MOODLE_INTERNAL') || die();
  * fixture pattern applies; what's new here is the STACK-activity gate.
  *
  * The positive-path STACK-activity test uses a real qtype_stack question via
- * $questiongenerator->create_question('stack', 'test0', ...) — 'test0' is one
- * of qtype_stack_test_helper::get_test_questions()'s named fixtures
- * (question/type/stack/tests/helper.php: "One input, one PRT, not
- * randomised"), and core_question_generator::create_question() is confirmed
- * (question/tests/generator/lib.php) to save it as a real DB-backed question
- * via the qtype's own save path, not an in-memory-only object — so this
- * exercises the exact same qtype_stack join stack_course_helper uses in
- * production.
+ * $questiongenerator->create_question('stack', 'test1', ...). 'test1' — not
+ * the simpler 'test0' — because core_question_generator::create_question()
+ * (question/tests/generator/lib.php) needs a get_stack_question_form_data_*()
+ * method on qtype_stack_test_helper, and confirmed against the real
+ * question/type/stack/tests/helper.php source, only some of its named
+ * fixtures implement that (the rest only have a make_stack_question_*()
+ * object-constructor, for STACK's own internal unit tests, which
+ * create_question() can't use) — 'test1' does: "One input, one PRT,
+ * randomised" (helper.php's own description). Confirmed a real, DB-backed
+ * question gets saved via the qtype's own save path, not an in-memory-only
+ * object — so this exercises the exact same qtype_stack join
+ * stack_course_helper uses in production.
  *
  * @package local_stackanalytics
  * @copyright  2026 Ernest Ting <eting@caltech.edu>
@@ -89,7 +93,7 @@ final class student_at_risk_test extends \advanced_testcase {
 
         $questiongenerator = $dg->get_plugin_generator('core_question');
         $cat = $questiongenerator->create_question_category();
-        $question = $questiongenerator->create_question('stack', 'test0', ['category' => $cat->id]);
+        $question = $questiongenerator->create_question('stack', 'test1', ['category' => $cat->id]);
         quiz_add_quiz_question($question->id, $quiz);
 
         $courseitem = \grade_item::fetch_course_item($course->id);
