@@ -141,6 +141,26 @@ class stack_prt_graph {
     }
 
     /**
+     * How many of $responsesummaries contain a single branch's answernote —
+     * the traversal-count granularity the bloated-tree diagnostic needs to
+     * distinguish "never reached" from "reached, but rarely" (architecture
+     * doc Figure 5's Node 6/Node 7 distinction).
+     *
+     * @param \stdClass $branch one entry from get_prt_branches()
+     * @param string[] $responsesummaries from get_response_summaries()
+     * @return int
+     */
+    public static function count_branch_occurrences(\stdClass $branch, array $responsesummaries): int {
+        $count = 0;
+        foreach ($responsesummaries as $summary) {
+            if ($summary !== '' && strpos($summary, $branch->answernote) !== false) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /**
      * How many of $branches have their answernote appear in at least one of
      * $responsesummaries — pure string matching, no DB access, so it can be
      * exercised directly with synthetic data.

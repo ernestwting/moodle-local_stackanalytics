@@ -99,3 +99,29 @@ All notable changes to `local_stackanalytics` are documented here.
   `is_valid_analysable`/`can_use_timesplitting` test for the new target.
   `calculate_sample()` integration coverage remains deferred to Phase 7
   pending a qtype_stack question fixture.
+
+## [0.6.0] — Phase 5
+
+- `classes/diagnostics/seed_bias_report.php`: one-way ANOVA of question score
+  by STACK random seed (architecture doc §3.4e). The per-attempt seed is read
+  from `question_attempt_step_data`'s `'_seed'` name — traced directly to
+  `qtype_stack\question::start_attempt()` in the real qtype_stack source,
+  since STACK's seed/variant mechanism has no core-Moodle equivalent to infer
+  it from. Reports the F-statistic and η² (with Cohen's standard magnitude
+  labels) but deliberately not an exact p-value, which would need the
+  F-distribution's CDF — a numerical routine not worth risking getting subtly
+  wrong without a reference implementation to verify it against, for a
+  dashboard that's exploratory by design.
+- `classes/diagnostics/bloated_tree_report.php`: per-branch PRT traversal
+  coverage on the same `stack_prt_graph` Phase 4 built, reported as a
+  maintenance metric (never-reached vs. low-traffic vs. adequate) rather than
+  folded into an ML feature, per the doc's own non-ML triage.
+- `classes/diagnostics/concept_dependency_report.php`: an explicit stub —
+  the doc itself frames concept-dependency Markov-chain mapping as offline/
+  future work outside the live pipeline, so this is a placeholder rather than
+  a half-built approximation.
+- `index.php` + `lib.php`'s `local_stackanalytics_extend_navigation_course()`:
+  the Diagnostics Dashboard page and its course navigation link, mirroring
+  local_quizanalytics's nav-hook pattern exactly. Deliberately free of
+  student-identifying data (§7).
+- Pure-math tests for the ANOVA and branch-classification logic.

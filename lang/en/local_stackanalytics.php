@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 // Pluginname shows up in Site Administration > Plugins > Local plugins, and
-// will label the course-level dashboard link added in a later phase.
+// labels the course-level Diagnostics Dashboard link (see lib.php).
 $string['pluginname'] = 'STACK Analytics';
 $string['stackanalytics:view'] = 'View STACK Analytics dashboard and predictions';
 
@@ -49,3 +49,25 @@ $string['indicator:feedbackineffectiveness'] = 'STACK feedback ineffectiveness';
 
 // Model 2 target.
 $string['target:questionneedsreview'] = 'STACK question/PRT needs review';
+
+// Diagnostics Dashboard (index.php) — statistical/descriptive, not part of
+// the ML pipeline (architecture doc §3.1).
+$string['dashboardtitle'] = 'STACK Diagnostics Dashboard';
+$string['seedbiasheading'] = 'Seed bias (one-way ANOVA across random seeds)';
+$string['bloatedtreeheading'] = 'PRT branch coverage';
+$string['seedgroups'] = 'Distinct seeds observed';
+$string['notenoughdata'] = 'Not enough attempt data yet to compute this.';
+$string['notavailable'] = 'n/a';
+$string['etamagnitude_negligible'] = 'negligible effect';
+$string['etamagnitude_small'] = 'small effect';
+$string['etamagnitude_medium'] = 'medium effect';
+$string['etamagnitude_large'] = 'large effect';
+$string['node'] = 'Node';
+$string['branch'] = 'Branch';
+$string['traversals'] = 'Traversals observed';
+$string['coverage'] = 'Coverage';
+$string['coverage_unreached'] = 'Never reached — pruning candidate';
+$string['coverage_low_traffic'] = 'Low traffic — review before pruning';
+$string['coverage_adequate'] = 'Adequately traversed';
+$string['unknownquestion'] = 'Unknown question';
+$string['unknownquiz'] = 'Unknown quiz';
