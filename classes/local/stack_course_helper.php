@@ -51,20 +51,7 @@ class stack_course_helper {
     public static function course_has_stack_activity(int $courseid): bool {
         global $DB;
 
-        $sql = "SELECT 1
-                  FROM {quiz} quiz
-                  JOIN {course_modules} cm ON cm.instance = quiz.id
-                  JOIN {modules} m ON m.id = cm.module AND m.name = 'quiz'
-                  JOIN {context} ctx ON ctx.contextlevel = :contextmodule AND ctx.instanceid = cm.id
-                  JOIN {quiz_slots} slot ON slot.quizid = quiz.id
-                  JOIN {question_references} qr ON qr.usingcontextid = ctx.id
-                                                AND qr.component = 'mod_quiz'
-                                                AND qr.questionarea = 'slot'
-                                                AND qr.itemid = slot.id
-                  JOIN {question_bank_entries} qbe ON qbe.id = qr.questionbankentryid
-                  JOIN {question_versions} qv ON qv.questionbankentryid = qbe.id
-                  JOIN {question} q ON q.id = qv.questionid AND q.qtype = 'stack'
-                 WHERE quiz.course = :courseid";
+        $sql = "SELECT 1 FROM " . self::stack_slot_join_sql() . " WHERE quiz.course = :courseid";
 
         return $DB->record_exists_sql($sql, [
             'contextmodule' => CONTEXT_MODULE,
@@ -76,15 +63,11 @@ class stack_course_helper {
      * Resolves a Model 1 sample id back to the (userid, courseid) pair it
      * represents.
      *
-     * Model 1 runs on \core_analytics\course, whose samples are enrolments —
-     * confirmed against moodledev.io's Analytics API docs (Section 2.1) as
-     * the standard "sample = enrolment" analyser core's own student-risk-style
-     * models use; the concrete sample-origin table name ('user_enrolments')
-     * should be double-checked against your target Moodle's own
-     * \core_analytics\course::get_samples_origin() the first time a Model 1
-     * indicator unexpectedly returns null in a real install, since that is
-     * the one detail this helper assumes rather than something read from a
-     * live core checkout.
+     * Model 1 runs on \core\analytics\analyser\student_enrolments, whose
+     * get_samples_origin() returns 'user_enrolments' and whose sample ids are
+     * user_enrolments.id — confirmed by reading that analyser's source
+     * directly against a real Moodle 4.5 core checkout while planning Phase 2
+     * (see classes/analytics/target/student_at_risk.php's docblock).
      *
      * @param int $enrolmentid a user_enrolments.id
      * @return \stdClass|null object with ->userid and ->courseid, or null if not found
@@ -99,5 +82,72 @@ class stack_course_helper {
 
         $record = $DB->get_record_sql($sql, ['id' => $enrolmentid]);
         return $record ?: null;
+    }
+
+    /**
+     * Every STACK-backed quiz slot in a course — Model 2's sample grain
+     * ("this STACK question as it appears in this specific quiz", i.e. one
+     * quiz_slots row; see stack_question_analyser's docblock for why this
+     * grain was chosen over a bare question id).
+     *
+     * @param int $courseid
+     * @return \stdClass[] keyed by slot id, each with ->id, ->quizid, ->questionid, ->slot (slot number)
+     */
+    public static function get_course_stack_slots(int $courseid): array {
+        global $DB;
+
+        $sql = "SELECT slot.id, slot.quizid, slot.slot, q.id AS questionid
+                  FROM " . self::stack_slot_join_sql() . "
+                 WHERE quiz.course = :courseid";
+
+        return $DB->get_records_sql($sql, [
+            'contextmodule' => CONTEXT_MODULE,
+            'courseid'      => $courseid,
+        ]);
+    }
+
+    /**
+     * Resolves an arbitrary set of Model 2 sample ids (quiz_slots.id values,
+     * which may span multiple courses) back to their slot/quiz/question data.
+     *
+     * @param int[] $slotids
+     * @return \stdClass[] keyed by slot id, each with ->id, ->quizid, ->courseid, ->slot, ->questionid
+     */
+    public static function get_stack_slots(array $slotids): array {
+        global $DB;
+
+        if (empty($slotids)) {
+            return [];
+        }
+
+        [$insql, $params] = $DB->get_in_or_equal($slotids, SQL_PARAMS_NAMED);
+        $sql = "SELECT slot.id, slot.quizid, quiz.course AS courseid, slot.slot, q.id AS questionid
+                  FROM " . self::stack_slot_join_sql() . "
+                 WHERE slot.id $insql";
+        $params['contextmodule'] = CONTEXT_MODULE;
+
+        return $DB->get_records_sql($sql, $params);
+    }
+
+    /**
+     * The shared "STACK question slots" join fragment used by both the
+     * course-activity check above and Model 2's sample queries. Matches the
+     * join local_quizanalytics's data_fetcher and this plugin's
+     * stack_attempt_reader both already rely on for the same "which quiz
+     * slots are backed by a qtype_stack question" problem.
+     */
+    private static function stack_slot_join_sql(): string {
+        return "{quiz} quiz
+                  JOIN {course_modules} cm ON cm.instance = quiz.id
+                  JOIN {modules} m ON m.id = cm.module AND m.name = 'quiz'
+                  JOIN {context} ctx ON ctx.contextlevel = :contextmodule AND ctx.instanceid = cm.id
+                  JOIN {quiz_slots} slot ON slot.quizid = quiz.id
+                  JOIN {question_references} qr ON qr.usingcontextid = ctx.id
+                                                AND qr.component = 'mod_quiz'
+                                                AND qr.questionarea = 'slot'
+                                                AND qr.itemid = slot.id
+                  JOIN {question_bank_entries} qbe ON qbe.id = qr.questionbankentryid
+                  JOIN {question_versions} qv ON qv.questionbankentryid = qbe.id
+                  JOIN {question} q ON q.id = qv.questionid AND q.qtype = 'stack'";
     }
 }

@@ -45,3 +45,24 @@ All notable changes to `local_stackanalytics` are documented here.
   grade-to-pass validity check taking precedence over it, and a
   `calculate_sample()`/analyser integration test modelled directly on core's
   own `course_gradetopass` test in `course/tests/targets_test.php`.
+
+## [0.4.0] — Phase 3
+
+- `classes/analytics/analyser/stack_question_analyser.php`: Model 2's analyser.
+  After verifying against a real Moodle 4.5 core checkout that core's only two
+  analyser base classes (`by_course`, `sitewide`) both hardcode their
+  analysable, this extends `by_course` and reuses the existing
+  `\core_analytics\course` analysable unchanged — mirroring exactly how core's
+  own `student_enrolments` analyser works for Model 1 — rather than building a
+  from-scratch custom analysable with no precedent to verify against. STACK
+  questions become *samples* (one `quiz_slots` row each) within a course,
+  which still delivers the course-scoped, memory-safe processing the
+  architecture doc calls for.
+- `classes/local/stack_course_helper.php`: adds `get_course_stack_slots()` and
+  `get_stack_slots()`, reusing the same STACK-question join as Phase 0/1's
+  `course_has_stack_activity()` (now factored into a shared private helper).
+- `tests/stack_question_analyser_test.php`: confirms non-STACK quiz slots are
+  correctly excluded from Model 2's samples. A positive-path test (a real
+  qtype_stack question included as a sample) needs qtype_stack's own question
+  generator and is deferred to Phase 7, same as `student_at_risk_test.php`'s
+  equivalent gap.
