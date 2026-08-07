@@ -36,3 +36,7 @@ $string['indicator:responselatencyanomaly'] = 'Anomalous STACK response latency'
 $string['indicator:disengagemententropy'] = 'STACK disengagement entropy';
 $string['indicator:helpseekinggap'] = 'STACK help-seeking gap';
 $string['indicator:feedbackrevisiondistance'] = 'STACK feedback revision distance';
+
+// Model 1 target.
+$string['target:studentatrisk'] = 'Student at risk in a STACK-based course';
+$string['errornostackactivity'] = 'This course has no STACK (qtype_stack) question activity';

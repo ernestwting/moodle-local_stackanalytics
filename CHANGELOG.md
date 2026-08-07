@@ -27,3 +27,21 @@ All notable changes to `local_stackanalytics` are documented here.
 - Each indicator's normalization math is factored into small public static
   methods, unit-tested directly with synthetic values in `tests/`. DB-fixture-backed
   integration tests for `calculate_sample()` itself are deferred to Phase 7.
+
+## [0.3.0] — Phase 2
+
+- `classes/analytics/target/student_at_risk.php`: Model 1's binary target,
+  extending core's own `\core_course\analytics\target\course_gradetopass`
+  (grade-to-pass-threshold risk, with all of `course_enrolments`'s enrolment-
+  window/course-validity checks) and adding the architecture doc's "STACK
+  courses only" restriction via `stack_course_helper::course_has_stack_activity()`.
+- `db/analytics.php`: registers Model 1 (target + five Phase 1 indicators +
+  `\core\analytics\time_splitting\quarters_accum`, disabled by default pending
+  admin review of thresholds) — the schema and its automatic-registration
+  mechanism (`\core_analytics\manager::update_default_models_for_component()`,
+  called from every plugin install/upgrade) were confirmed against the real
+  Moodle 4.5 core checkout, not assumed from documentation.
+- `tests/student_at_risk_test.php`: the STACK-activity gate, the inherited
+  grade-to-pass validity check taking precedence over it, and a
+  `calculate_sample()`/analyser integration test modelled directly on core's
+  own `course_gradetopass` test in `course/tests/targets_test.php`.
