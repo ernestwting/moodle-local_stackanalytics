@@ -54,6 +54,25 @@ jobs:
           sudo apt-get install -y --no-install-recommends maxima
           echo "diff(x^2, x); quit();" | maxima --very-quiet
 
+      # Installing a working `maxima` binary (above) was necessary but not
+      # sufficient — run #3 still failed the same way, meaning Ubuntu's
+      # packaged Maxima isn't a drop-in match for whatever
+      # create_auto_maxima_image() (question/type/stack/stack/cas/connectorhelper.class.php)
+      # expects to compile against. install.php's own guard condition offers
+      # a documented escape hatch instead of fighting that: it skips the
+      # optimised-image build entirely if QTYPE_STACK_TEST_CONFIG_PLATFORM is
+      # defined as 'server', 'server-proxy', or 'none' *before* its
+      # PHPUNIT_TEST branch runs. `moodle-plugin-ci add-config` can't do this
+      # — its own source (AddConfigCommand.php) confirms it edits config.php
+      # *after* `install` completes, by which point install.php has already
+      # run and crashed. PHP's auto_prepend_file (set on the PHP setup step
+      # below) instead guarantees the constant exists for every PHP process
+      # in this job from the start, including moodle-plugin-ci's internal
+      # phpunit-init sub-step — sidestepping the Maxima-compatibility
+      # question entirely rather than continuing to guess at it blind.
+      - name: Write qtype_stack CI override (skip its optimised-Maxima-image build)
+        run: echo "<?php define('QTYPE_STACK_TEST_CONFIG_PLATFORM', 'none');" > "${{ github.workspace }}/qtype_stack_ci_override.php"
+
       - name: Check out this plugin
         uses: actions/checkout@v4
         with:
@@ -74,7 +93,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          ini-values: max_input_vars=5000, opcache.enable_cli=1
+          ini-values: max_input_vars=5000, opcache.enable_cli=1, auto_prepend_file=${{ github.workspace }}/qtype_stack_ci_override.php
           coverage: none
 
       - name: Initialise moodle-plugin-ci

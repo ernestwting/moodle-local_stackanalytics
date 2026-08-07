@@ -2,19 +2,28 @@
 
 All notable changes to `local_stackanalytics` are documented here.
 
-## CI fix (post-Phase 8)
+## CI fixes (post-Phase 8)
 
-- `.github/workflows/ci.yml`'s first real run failed at plugin install with
-  "maxima_opt_auto creation failed" — traced to `question/type/stack/db/install.php`:
-  qtype_stack unconditionally tries to build an optimised Maxima image
-  whenever `PHPUNIT_TEST` is true (moodle-plugin-ci's own phpunit-init
-  sub-step), and no `maxima` binary was installed anywhere in the workflow.
-  Fixed by installing Ubuntu's packaged `maxima` (`--no-install-recommends`,
-  to skip the TeX Live pull-in that the plain package recommends) before the
-  plugin-install step — simpler than the real qtype_stack project's own CI,
-  which pins a specific Maxima build via sourceforge `.deb` downloads, but
-  sufficient since `connectorhelper.class.php`'s Lisp-backend detection
-  reads whatever Maxima reports rather than assuming a specific build.
+- Run #2 failed at plugin install with "maxima_opt_auto creation failed" —
+  traced to `question/type/stack/db/install.php`: qtype_stack unconditionally
+  tries to build an optimised Maxima image whenever `PHPUNIT_TEST` is true
+  (moodle-plugin-ci's own phpunit-init sub-step), and no `maxima` binary was
+  installed anywhere in the workflow. Fixed by installing Ubuntu's packaged
+  `maxima` before the plugin-install step.
+- Run #3, with `maxima` now installed, hit the *same* failure — Ubuntu's
+  packaged Maxima isn't a drop-in match for whatever
+  `connectorhelper.class.php`'s `create_auto_maxima_image()` expects to
+  compile against. Rather than keep guessing at Maxima package
+  compatibility, used `install.php`'s own documented escape hatch instead:
+  it skips the optimised-image build entirely if
+  `QTYPE_STACK_TEST_CONFIG_PLATFORM` is defined as `'none'` before its
+  `PHPUNIT_TEST` branch runs. `moodle-plugin-ci add-config` can't set this in
+  time — its own source (`AddConfigCommand.php`) confirms it edits
+  `config.php` *after* `install` completes, by which point install.php has
+  already run. Used PHP's `auto_prepend_file` ini setting instead (wired via
+  the `Setup PHP` step's `ini-values`), which guarantees the constant exists
+  for every PHP process in the job from the start, including
+  moodle-plugin-ci's internal phpunit-init sub-step.
 
 ## [0.1.0] — Phase 0
 
