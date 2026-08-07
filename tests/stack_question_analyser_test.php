@@ -17,7 +17,7 @@
 namespace local_stackanalytics;
 
 use local_stackanalytics\analytics\analyser\stack_question_analyser;
-use local_stackanalytics\analytics\target\student_at_risk;
+use local_stackanalytics\analytics\target\question_needs_review;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -26,16 +26,12 @@ defined('MOODLE_INTERNAL') || die();
  *
  * The quiz/question fixture setup mirrors mod_quiz's own
  * question_helper_test_trait::create_test_quiz() /
- * add_two_regular_questions() (mod/quiz/tests/classes/), read directly from
- * a real Moodle 4.5 core checkout to confirm the exact generator API
- * (quiz_add_quiz_question(), the 'core_question' plugin generator) rather
- * than guessing it.
- *
- * A positive-path test (a course whose quiz slot *is* a qtype_stack question
- * gets included as a sample) needs qtype_stack's own question generator,
- * which — like student_at_risk_test.php's equivalent gap — is deferred to
- * Phase 7 rather than guessed, since qtype_stack is a separate plugin not
- * present in this checkout to verify its generator against.
+ * add_two_regular_questions() (mod/quiz/tests/classes/); the positive-path
+ * STACK question uses $questiongenerator->create_question('stack', 'test0', ...),
+ * one of qtype_stack_test_helper::get_test_questions()'s named fixtures
+ * (question/type/stack/tests/helper.php) — confirmed, not guessed, that
+ * core_question_generator::create_question() saves it as a real DB-backed
+ * question (question/tests/generator/lib.php).
  *
  * @package local_stackanalytics
  * @copyright  2026 Ernest Ting <eting@caltech.edu>
@@ -57,13 +53,7 @@ final class stack_question_analyser_test extends \advanced_testcase {
         $question = $questiongenerator->create_question('shortanswer', null, ['category' => $cat->id]);
         quiz_add_quiz_question($question->id, $quiz);
 
-        // Model 2's own target (question_needs_review) doesn't exist until
-        // Phase 4; student_at_risk is used here purely as a concrete
-        // \core_analytics\local\target\base to satisfy the analyser
-        // constructor's type hint — get_all_samples()/get_samples_origin()
-        // never call anything on it. Swap this for question_needs_review
-        // once Phase 4 lands.
-        $target = new student_at_risk();
+        $target = new question_needs_review();
         $analyser = new stack_question_analyser(1, $target, [], [], []);
         $analysable = \core_analytics\course::instance($course);
 
@@ -73,14 +63,40 @@ final class stack_question_analyser_test extends \advanced_testcase {
         $this->assertEmpty($samplesdata);
     }
 
+    public function test_get_all_samples_includes_a_real_stack_question(): void {
+        $this->resetAfterTest(true);
+
+        $dg = $this->getDataGenerator();
+        $course = $dg->create_course();
+
+        $quizgenerator = $dg->get_plugin_generator('mod_quiz');
+        $quiz = $quizgenerator->create_instance(['course' => $course->id]);
+
+        $questiongenerator = $dg->get_plugin_generator('core_question');
+        $cat = $questiongenerator->create_question_category();
+        $question = $questiongenerator->create_question('stack', 'test0', ['category' => $cat->id]);
+        quiz_add_quiz_question($question->id, $quiz);
+
+        $target = new question_needs_review();
+        $analyser = new stack_question_analyser(1, $target, [], [], []);
+        $analysable = \core_analytics\course::instance($course);
+
+        [$sampleids, $samplesdata] = $analyser->get_all_samples($analysable);
+
+        $this->assertCount(1, $sampleids);
+        $slotid = reset($sampleids);
+        $this->assertEquals($question->id, $samplesdata[$slotid]['quiz_slots']->questionid);
+        $this->assertEquals($quiz->id, $samplesdata[$slotid]['quiz_slots']->quizid);
+
+        $this->assertEquals(
+            \context_course::instance($course->id)->id,
+            $analyser->sample_access_context($slotid)->id
+        );
+        $this->assertEquals($course->id, $analyser->get_sample_analysable($slotid)->get_id());
+    }
+
     public function test_get_samples_origin(): void {
-        // Model 2's own target (question_needs_review) doesn't exist until
-        // Phase 4; student_at_risk is used here purely as a concrete
-        // \core_analytics\local\target\base to satisfy the analyser
-        // constructor's type hint — get_all_samples()/get_samples_origin()
-        // never call anything on it. Swap this for question_needs_review
-        // once Phase 4 lands.
-        $target = new student_at_risk();
+        $target = new question_needs_review();
         $analyser = new stack_question_analyser(1, $target, [], [], []);
         $this->assertEquals('quiz_slots', $analyser->get_samples_origin());
     }

@@ -23,10 +23,17 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Unit tests for the Model 2 question_needs_review target.
  *
- * calculate_sample()'s pass-rate-threshold logic needs a real qtype_stack
- * question fixture to exercise end to end (stack_course_helper::get_stack_slots()
- * filters to qtype 'stack'), so — like the other Model 2 tests — that
- * DB-fixture-backed coverage is deferred to Phase 7.
+ * is_valid_analysable() only needs a STACK question to exist, so it's
+ * exercised here with a real one via
+ * $questiongenerator->create_question('stack', 'test0', ...) (a named
+ * qtype_stack_test_helper fixture — see stack_question_analyser_test.php's
+ * docblock for the generator API this relies on). calculate_sample()'s
+ * pass-rate-threshold logic additionally needs real *attempt* data (finished
+ * quiz attempts at that question, not just the question existing), which
+ * needs a full quiz-attempt walkthrough fixture — qtype_stack's own
+ * tests/walkthrough_interactive_test.php is the real mechanism to build that
+ * from, left for a future pass rather than risking an unverified attempt
+ * simulation here.
  *
  * @package local_stackanalytics
  * @copyright  2026 Ernest Ting <eting@caltech.edu>
@@ -45,6 +52,26 @@ final class question_needs_review_test extends \advanced_testcase {
             get_string('errornostackactivity', 'local_stackanalytics'),
             $target->is_valid_analysable($analysable)
         );
+    }
+
+    public function test_accepts_course_with_stack_activity(): void {
+        $this->resetAfterTest(true);
+
+        $dg = $this->getDataGenerator();
+        $course = $dg->create_course();
+
+        $quizgenerator = $dg->get_plugin_generator('mod_quiz');
+        $quiz = $quizgenerator->create_instance(['course' => $course->id]);
+
+        $questiongenerator = $dg->get_plugin_generator('core_question');
+        $cat = $questiongenerator->create_question_category();
+        $question = $questiongenerator->create_question('stack', 'test0', ['category' => $cat->id]);
+        quiz_add_quiz_question($question->id, $quiz);
+
+        $analysable = \core_analytics\course::instance($course);
+        $target = new question_needs_review();
+
+        $this->assertTrue($target->is_valid_analysable($analysable));
     }
 
     public function test_analyser_class(): void {

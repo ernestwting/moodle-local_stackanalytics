@@ -30,11 +30,15 @@ defined('MOODLE_INTERNAL') || die();
  * inherits both methods unchanged from course_gradetopass, so the same
  * fixture pattern applies; what's new here is the STACK-activity gate.
  *
- * A positive-path test (a course that *does* have STACK activity passes the
- * gate) needs a qtype_stack question fixture, which requires qtype_stack's
- * own question generator — left for Phase 7's fixture-backed test pass, once
- * a CI environment with qtype_stack installed (a declared plugin dependency)
- * is available to verify that generator's API against, rather than guessing it.
+ * The positive-path STACK-activity test uses a real qtype_stack question via
+ * $questiongenerator->create_question('stack', 'test0', ...) — 'test0' is one
+ * of qtype_stack_test_helper::get_test_questions()'s named fixtures
+ * (question/type/stack/tests/helper.php: "One input, one PRT, not
+ * randomised"), and core_question_generator::create_question() is confirmed
+ * (question/tests/generator/lib.php) to save it as a real DB-backed question
+ * via the qtype's own save path, not an in-memory-only object — so this
+ * exercises the exact same qtype_stack join stack_course_helper uses in
+ * production.
  *
  * @package local_stackanalytics
  * @copyright  2026 Ernest Ting <eting@caltech.edu>
@@ -67,6 +71,35 @@ final class student_at_risk_test extends \advanced_testcase {
             get_string('errornostackactivity', 'local_stackanalytics'),
             $target->is_valid_analysable($analysable)
         );
+    }
+
+    public function test_accepts_course_with_stack_activity_and_gradetopass(): void {
+        global $DB;
+
+        $this->resetAfterTest(true);
+        $now = time();
+
+        $dg = $this->getDataGenerator();
+        $course = $dg->create_course(['startdate' => $now - WEEKSECS, 'enddate' => $now - DAYSECS]);
+        $studentrole = $DB->get_record('role', ['shortname' => 'student']);
+        $dg->enrol_user($dg->create_user()->id, $course->id, $studentrole->id);
+
+        $quizgenerator = $dg->get_plugin_generator('mod_quiz');
+        $quiz = $quizgenerator->create_instance(['course' => $course->id]);
+
+        $questiongenerator = $dg->get_plugin_generator('core_question');
+        $cat = $questiongenerator->create_question_category();
+        $question = $questiongenerator->create_question('stack', 'test0', ['category' => $cat->id]);
+        quiz_add_quiz_question($question->id, $quiz);
+
+        $courseitem = \grade_item::fetch_course_item($course->id);
+        $courseitem->gradepass = 50;
+        $DB->update_record('grade_items', $courseitem);
+
+        $analysable = new \core_analytics\course($course);
+        $target = new student_at_risk();
+
+        $this->assertTrue($target->is_valid_analysable($analysable));
     }
 
     public function test_rejects_course_without_gradetopass_before_checking_stack_activity(): void {

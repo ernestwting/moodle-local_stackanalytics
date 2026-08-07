@@ -144,3 +144,32 @@ All notable changes to `local_stackanalytics` are documented here.
   already covered by their own privacy providers; the Analytics API's own
   prediction storage is handled generically by core_analytics's privacy
   provider regardless of which plugin registered the model.
+
+## [0.8.0] — Phase 7
+
+- Closed several of the "deferred to Phase 7" test gaps for real, having
+  confirmed the exact mechanism: `core_question_generator::create_question('stack',
+  'test0', ...)` (question/tests/generator/lib.php) saves a genuine DB-backed
+  qtype_stack question from one of `qtype_stack_test_helper::get_test_questions()`'s
+  named fixtures (question/type/stack/tests/helper.php) — not an in-memory-only
+  object. Added positive-path tests to `student_at_risk_test.php`,
+  `stack_question_analyser_test.php`, and `question_needs_review_test.php`
+  using this.
+- What's still genuinely deferred: `calculate_sample()`-level tests that need
+  real *attempt* data (responses, seeds, PRT traversal), not just a question
+  existing. These need a full quiz-attempt walkthrough fixture — qtype_stack's
+  own `tests/walkthrough_interactive_test.php` is the real, verified mechanism
+  to build that from — left for a future pass rather than shipping an
+  unverified attempt-simulation test with no live DB available in this
+  session to actually run it against.
+- `.github/workflows/ci.yml`: a GitHub Actions workflow running
+  moodle-plugin-ci (phplint, phpmd, phpcs, phpdoc, validate, savepoints,
+  phpunit) against a real Moodle 4.5 + qtype_stack + PostgreSQL environment.
+  qtype_stack is checked out separately and wired in via `EXTRA_PLUGINS_DIR`
+  (confirmed against moodle-plugin-ci's own `InstallCommand.php` source,
+  not guessed) — its real repository (`github.com/maths/moodle-qtype_stack`)
+  was confirmed from a CDN URL inside qtype_stack's own `mkdocs.yml`, not
+  assumed. Matrix deliberately kept to one PHP/Moodle/DB combination for now;
+  `phpcs`/`phpdoc` are `continue-on-error` since this codebase has never been
+  run through Code Checker/PHPDoc Checker and may have real, fixable style
+  findings on the first run. No Behat step yet — no `.feature` files exist.

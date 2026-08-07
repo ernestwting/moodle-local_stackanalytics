@@ -1,0 +1,105 @@
+name: Moodle Plugin CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+
+    services:
+      pgsql:
+        image: postgres:17
+        env:
+          POSTGRES_USER: 'postgres'
+          POSTGRES_HOST_AUTH_METHOD: 'trust'
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Kept to one PHP/Moodle/DB combination for now (an alpha-stage
+        # personal project, not a plugin-directory submission yet) — widen
+        # this matrix once the suite is passing reliably. MOODLE_405_STABLE
+        # matches the real Moodle 4.5 checkout this plugin's Analytics API
+        # usage was verified against during development.
+        php: ['8.2']
+        moodle-branch: ['MOODLE_405_STABLE']
+        database: [pgsql]
+
+    steps:
+      - name: Check out this plugin
+        uses: actions/checkout@v4
+        with:
+          path: plugin
+
+      # qtype_stack is a required dependency (version.php) not shipped with
+      # core, so moodle-plugin-ci needs it checked out separately and told
+      # about it via EXTRA_PLUGINS_DIR — the real repository location
+      # (github.com/maths/moodle-qtype_stack) was confirmed from a CDN URL
+      # inside qtype_stack's own mkdocs.yml, not guessed.
+      - name: Check out qtype_stack (required plugin dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: maths/moodle-qtype_stack
+          path: extra-plugins/qtype_stack
+
+      - name: Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          ini-values: max_input_vars=5000, opcache.enable_cli=1
+          coverage: none
+
+      - name: Initialise moodle-plugin-ci
+        run: |
+          composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^4
+          echo $(cd ci/bin; pwd) >> $GITHUB_PATH
+          echo $(cd ci/vendor/bin; pwd) >> $GITHUB_PATH
+          sudo locale-gen en_AU.UTF-8
+
+      - name: Install moodle-plugin-ci
+        run: moodle-plugin-ci install --plugin ./plugin --db-host=127.0.0.1
+        env:
+          DB: ${{ matrix.database }}
+          MOODLE_BRANCH: ${{ matrix.moodle-branch }}
+          EXTRA_PLUGINS_DIR: ${{ github.workspace }}/extra-plugins
+
+      - name: PHP Lint
+        if: ${{ !cancelled() }}
+        run: moodle-plugin-ci phplint
+
+      - name: PHP Mess Detector
+        continue-on-error: true
+        if: ${{ !cancelled() }}
+        run: moodle-plugin-ci phpmd
+
+      - name: Moodle Code Checker
+        continue-on-error: true # First run against an unreviewed codebase — see CHANGELOG's Phase 7 entry.
+        if: ${{ !cancelled() }}
+        run: moodle-plugin-ci phpcs --max-warnings 0
+
+      - name: Moodle PHPDoc Checker
+        continue-on-error: true # Same reasoning as Code Checker above.
+        if: ${{ !cancelled() }}
+        run: moodle-plugin-ci phpdoc --max-warnings 0
+
+      - name: Validating
+        if: ${{ !cancelled() }}
+        run: moodle-plugin-ci validate
+
+      - name: Check upgrade savepoints
+        if: ${{ !cancelled() }}
+        run: moodle-plugin-ci savepoints
+
+      - name: PHPUnit tests
+        if: ${{ !cancelled() }}
+        run: moodle-plugin-ci phpunit --fail-on-warning
+
+      - name: Mark cancelled jobs as failed.
+        if: ${{ cancelled() }}
+        run: exit 1
