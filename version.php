@@ -32,12 +32,12 @@ $plugin->component = 'local_stackanalytics'; // Must match the folder this unzip
                                               // directly inside the single top-level wrapper folder, which is
                                               // what the Moodle plugin uploader requires to detect the
                                               // frankenstyle component, plugin type, and required core version.
-$plugin->version   = 2026080700;             // YYYYMMDDXX — bump this every time you push an update.
+$plugin->version   = 2026080708;             // YYYYMMDDXX — bump this every time you push an update.
 $plugin->requires  = 2022041900;             // Moodle 4.0.0 — matches the analyser/target/indicator base
                                               // classes this plugin extends (\core_analytics\local\...),
                                               // present since Moodle 3.4 and stable through 4.x/5.x.
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.0';
+$plugin->release   = '0.8.0';
 
 // This plugin builds two Moodle Analytics API prediction models (student risk,
 // question/PRT review) and a diagnostics dashboard, all specific to STACK

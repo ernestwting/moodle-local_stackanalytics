@@ -173,3 +173,20 @@ All notable changes to `local_stackanalytics` are documented here.
   `phpcs`/`phpdoc` are `continue-on-error` since this codebase has never been
   run through Code Checker/PHPDoc Checker and may have real, fixable style
   findings on the first run. No Behat step yet — no `.feature` files exist.
+
+## [0.8.0] — Phase 8
+
+- `README.md`: corrected the Model 2 description (no custom analysable, per
+  Phase 3's design decision), added a CI badge, and a "Known gaps" section
+  naming the two documented indicator simplifications and the deferred
+  attempt-data test coverage explicitly, rather than letting them only live
+  in scattered docblocks.
+- `INSTALL.md`: full placement/upgrade/enable-the-models/configure-thresholds
+  walkthrough plus a troubleshooting table, mirroring local_quizanalytics's
+  own `INSTALL.md` depth.
+- `version.php`: release bumped to `0.8.0` to match this phase's CHANGELOG
+  entry.
+
+This closes the phased build. Custom-regression-backend and offline
+concept-dependency-mapping work (architecture doc §8's Phase 6/stretch items)
+remain explicit future work, not attempted here.
