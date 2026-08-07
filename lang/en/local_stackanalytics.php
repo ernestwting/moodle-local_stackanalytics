@@ -40,3 +40,12 @@ $string['indicator:feedbackrevisiondistance'] = 'STACK feedback revision distanc
 // Model 1 target.
 $string['target:studentatrisk'] = 'Student at risk in a STACK-based course';
 $string['errornostackactivity'] = 'This course has no STACK (qtype_stack) question activity';
+
+// Model 2 indicators.
+$string['indicator:questiondifficultyirt'] = 'STACK question difficulty';
+$string['indicator:syntaxerrorrate'] = 'STACK syntax-error rate';
+$string['indicator:unreachednoderatio'] = 'STACK PRT unreached-node ratio';
+$string['indicator:feedbackineffectiveness'] = 'STACK feedback ineffectiveness';
+
+// Model 2 target.
+$string['target:questionneedsreview'] = 'STACK question/PRT needs review';

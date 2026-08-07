@@ -26,12 +26,9 @@
  * registered model's indicators/timesplitting here has no further effect —
  * that has to be done through Site Administration > Analytics > Models.
  *
- * Model 2 (question/PRT review) is added to this same array in a later
- * phase, once its custom analysable/analyser/target/indicators exist.
- *
- * `enabled` is deliberately false: this plugin is alpha-stage software and
- * a newly-installed site should not start generating "at risk" predictions
- * — and the insight notifications those trigger — on live student data
+ * `enabled` is deliberately false for both models: this plugin is alpha-stage
+ * software and a newly-installed site should not start generating
+ * predictions — and the insight notifications those trigger — on live data
  * before an administrator has reviewed the indicator thresholds (Phase 6)
  * and had a chance to train/evaluate the model. Site Administration >
  * Analytics > Models is where it gets enabled once that review is done.
@@ -54,6 +51,17 @@ $models = [
             '\local_stackanalytics\analytics\indicator\feedback_revision_distance',
         ],
         'timesplitting' => '\core\analytics\time_splitting\quarters_accum',
+        'enabled' => false,
+    ],
+    [
+        'target' => '\local_stackanalytics\analytics\target\question_needs_review',
+        'indicators' => [
+            '\local_stackanalytics\analytics\indicator\question_difficulty_irt',
+            '\local_stackanalytics\analytics\indicator\syntax_error_rate',
+            '\local_stackanalytics\analytics\indicator\unreached_node_ratio',
+            '\local_stackanalytics\analytics\indicator\feedback_ineffectiveness',
+        ],
+        'timesplitting' => '\core\analytics\time_splitting\single_range',
         'enabled' => false,
     ],
 ];

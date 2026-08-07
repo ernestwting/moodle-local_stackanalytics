@@ -66,3 +66,36 @@ All notable changes to `local_stackanalytics` are documented here.
   qtype_stack question included as a sample) needs qtype_stack's own question
   generator and is deferred to Phase 7, same as `student_at_risk_test.php`'s
   equivalent gap.
+
+## [0.5.0] — Phase 4
+
+- `classes/local/stack_prt_graph.php`: PRT branch enumeration and coverage,
+  built on a real finding from the qtype_stack source (question/type/stack in
+  the same Moodle 4.5 checkout): `qtype_stack_prt_nodes`' teacher-authored
+  `trueanswernote`/`falseanswernote` strings are exactly what
+  `qtype_stack\question::summarise_response()` writes into the standard
+  `question_attempts.responsesummary` field, so a branch's reach is
+  observable by substring-matching its answernote against attempts'
+  response summaries — no STACK-internal parsing needed.
+- Four Model 2 indicators: `question_difficulty_irt` (logit-scale difficulty
+  from empirical pass rate — documented as a deliberate simplification of the
+  architecture doc's full 2PL IRT model, since joint a/b/c/θ estimation needs
+  a batch calibration step the per-sample `calculate_sample()` API has no
+  hook for), `syntax_error_rate` (reuses the standard question-engine
+  `'invalid'` state rather than parsing STACK's AnswerTest output),
+  `unreached_node_ratio` (on `stack_prt_graph`), and `feedback_ineffectiveness`
+  (a documented simplification of the doc's per-branch paired McNemar's test:
+  an aggregate log-odds effect size of post-failure improvement vs. first-try
+  baseline, since per-branch attribution isn't observable from
+  `responsesummary`'s current-value-only history).
+- `classes/analytics/target/question_needs_review.php`: Model 2's binary
+  target, using the architecture doc's proxy-label option 2 (pass rate below
+  a threshold) — the doc's own circularity caveat against
+  `question_difficulty_irt` is called out directly in the class docblock.
+- `db/analytics.php`: registers Model 2 (target + four new indicators,
+  `\core\analytics\time_splitting\single_range` per the doc's §3.5, disabled
+  by default like Model 1).
+- Pure-math tests for all four new indicators plus `stack_prt_graph`, and an
+  `is_valid_analysable`/`can_use_timesplitting` test for the new target.
+  `calculate_sample()` integration coverage remains deferred to Phase 7
+  pending a qtype_stack question fixture.

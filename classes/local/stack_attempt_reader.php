@@ -15,11 +15,12 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Shared question-engine data access for the Model 1 (student-level)
- * indicators. Centralising these queries here, rather than duplicating a
- * variant of the same STACK-question join in every indicator class, means
- * there is exactly one place to fix a schema assumption if it turns out to
- * be wrong against a real install.
+ * Shared question-engine data access for both models' indicators: Model 1's
+ * per-student queries (scoped by userid+courseid) and Model 2's per-slot
+ * queries (scoped by quizid+questionid, added in Phase 4). Centralising
+ * these here, rather than duplicating a variant of the same STACK-question
+ * join in every indicator class, means there is exactly one place to fix a
+ * schema assumption if it turns out to be wrong against a real install.
  *
  * All queries join through mod_quiz's quiz_attempts + the question engine's
  * own question_attempts / question_attempt_steps / question_attempt_step_data
@@ -320,6 +321,97 @@ class stack_attempt_reader {
             $byuser[$row->userid][] = (int) $row->timecreated;
         }
         return $byuser;
+    }
+
+    /**
+     * Final-step fraction for every finished attempt at one specific
+     * question, within one specific quiz — Model 2's sample grain (a
+     * quiz_slots row). Used by question_difficulty_irt.
+     *
+     * @param int $quizid
+     * @param int $questionid
+     * @return float[] one fraction (0..1) per finished attempt
+     */
+    public static function get_slot_finished_fractions(int $quizid, int $questionid): array {
+        global $DB;
+
+        $sql = "SELECT qas.fraction
+                  FROM {quiz_attempts} quiza
+                  JOIN {question_attempts} qa ON qa.questionusageid = quiza.uniqueid
+                                              AND qa.questionid = :questionid
+                  JOIN {question_attempt_steps} qas ON qas.questionattemptid = qa.id
+                                                    AND qas.sequencenumber = (
+                                                        SELECT MAX(s2.sequencenumber)
+                                                          FROM {question_attempt_steps} s2
+                                                         WHERE s2.questionattemptid = qa.id
+                                                    )
+                 WHERE quiza.quiz = :quizid
+                   AND quiza.state = 'finished'
+                   AND qas.fraction IS NOT NULL";
+
+        $records = $DB->get_records_sql($sql, ['quizid' => $quizid, 'questionid' => $questionid]);
+        return array_map(fn($record) => (float) $record->fraction, $records);
+    }
+
+    /**
+     * Final step (state, fraction) for every attempt at one specific
+     * question within one specific quiz. Used by syntax_error_rate to
+     * distinguish 'invalid' (syntax/input-validation failure, a standard
+     * question-engine state — see question/engine/states.php's
+     * question_state_invalid, confirmed against a real Moodle 4.5 checkout)
+     * from other incorrect final states (mathematical-equivalence failure).
+     *
+     * @param int $quizid
+     * @param int $questionid
+     * @return \stdClass[] each with ->state and ->fraction
+     */
+    public static function get_slot_final_states(int $quizid, int $questionid): array {
+        global $DB;
+
+        $sql = "SELECT qas.id, qas.state, qas.fraction
+                  FROM {quiz_attempts} quiza
+                  JOIN {question_attempts} qa ON qa.questionusageid = quiza.uniqueid
+                                              AND qa.questionid = :questionid
+                  JOIN {question_attempt_steps} qas ON qas.questionattemptid = qa.id
+                                                    AND qas.sequencenumber = (
+                                                        SELECT MAX(s2.sequencenumber)
+                                                          FROM {question_attempt_steps} s2
+                                                         WHERE s2.questionattemptid = qa.id
+                                                    )
+                 WHERE quiza.quiz = :quizid";
+
+        return array_values($DB->get_records_sql($sql, ['quizid' => $quizid, 'questionid' => $questionid]));
+    }
+
+    /**
+     * Every step of every attempt at one specific question within one
+     * specific quiz, across all students — the Model 2 (slot-scoped)
+     * counterpart to get_attempt_step_sequences(), used by
+     * feedback_ineffectiveness to look at consecutive-step fraction
+     * transitions.
+     *
+     * @param int $quizid
+     * @param int $questionid
+     * @return array keyed by question_attempts.id, each value an ordered array of stdClass{fraction}
+     */
+    public static function get_slot_step_sequences(int $quizid, int $questionid): array {
+        global $DB;
+
+        $sql = "SELECT qas.id AS stepid, qa.id AS qaid, qas.sequencenumber, qas.fraction
+                  FROM {quiz_attempts} quiza
+                  JOIN {question_attempts} qa ON qa.questionusageid = quiza.uniqueid
+                                              AND qa.questionid = :questionid
+                  JOIN {question_attempt_steps} qas ON qas.questionattemptid = qa.id
+                 WHERE quiza.quiz = :quizid
+              ORDER BY qa.id, qas.sequencenumber";
+
+        $rows = $DB->get_records_sql($sql, ['quizid' => $quizid, 'questionid' => $questionid]);
+
+        $byattempt = [];
+        foreach ($rows as $row) {
+            $byattempt[$row->qaid][] = $row;
+        }
+        return $byattempt;
     }
 
     /**
