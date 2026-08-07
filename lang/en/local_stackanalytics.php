@@ -28,3 +28,11 @@ defined('MOODLE_INTERNAL') || die();
 // will label the course-level dashboard link added in a later phase.
 $string['pluginname'] = 'STACK Analytics';
 $string['stackanalytics:view'] = 'View STACK Analytics dashboard and predictions';
+
+// Model 1 (student risk) indicator names — shown in Site Administration >
+// Analytics > Models when configuring/inspecting a model's indicators.
+$string['indicator:gradetrajectory'] = 'STACK grade trajectory';
+$string['indicator:responselatencyanomaly'] = 'Anomalous STACK response latency';
+$string['indicator:disengagemententropy'] = 'STACK disengagement entropy';
+$string['indicator:helpseekinggap'] = 'STACK help-seeking gap';
+$string['indicator:feedbackrevisiondistance'] = 'STACK feedback revision distance';
