@@ -51,11 +51,19 @@ defined('MOODLE_INTERNAL') || die();
 class question_needs_review extends \core_analytics\local\target\binary {
 
     /**
-     * Below this pass rate, a question is labelled "needs review". A
-     * hardcoded default for now; becomes an admin setting in Phase 6
-     * (local_stackanalytics/questionneedsreviewthreshold).
+     * Below this pass rate, a question is labelled "needs review". Default
+     * used when the local_stackanalytics/questionneedsreviewthreshold admin
+     * setting (Phase 6) is unset.
      */
     const DEFAULT_PASSRATE_THRESHOLD = 0.5;
+
+    /**
+     * @return float the admin-configured threshold, or DEFAULT_PASSRATE_THRESHOLD if unset
+     */
+    public static function get_passrate_threshold(): float {
+        $configured = get_config('local_stackanalytics', 'questionneedsreviewthreshold');
+        return $configured !== false && $configured !== '' ? (float) $configured : self::DEFAULT_PASSRATE_THRESHOLD;
+    }
 
     /**
      * @return \lang_string
@@ -127,6 +135,6 @@ class question_needs_review extends \core_analytics\local\target\binary {
         }
 
         $passrate = array_sum($fractions) / count($fractions);
-        return $passrate < self::DEFAULT_PASSRATE_THRESHOLD ? 1 : 0;
+        return $passrate < self::get_passrate_threshold() ? 1 : 0;
     }
 }

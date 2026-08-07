@@ -44,7 +44,11 @@ defined('MOODLE_INTERNAL') || die();
  */
 class help_seeking_gap extends \core_analytics\local\indicator\linear {
 
-    /** How long after a failure a resource access still counts as "seeking help for it". */
+    /**
+     * How long after a failure a resource access still counts as "seeking
+     * help for it". Default used when the
+     * local_stackanalytics/helpseekinglookback admin setting (Phase 6) is unset.
+     */
     const LOOKBACK_SECONDS = HOURSECS;
 
     /**
@@ -52,6 +56,14 @@ class help_seeking_gap extends \core_analytics\local\indicator\linear {
      */
     public static function get_name(): \lang_string {
         return new \lang_string('indicator:helpseekinggap', 'local_stackanalytics');
+    }
+
+    /**
+     * @return int the admin-configured lookback in seconds, or LOOKBACK_SECONDS if unset
+     */
+    public static function get_lookback_seconds(): int {
+        $configured = get_config('local_stackanalytics', 'helpseekinglookback');
+        return $configured !== false && $configured !== '' ? (int) $configured : self::LOOKBACK_SECONDS;
     }
 
     /**
@@ -133,16 +145,18 @@ class help_seeking_gap extends \core_analytics\local\indicator\linear {
             return null; // No failures yet for this student — nothing to condition help-seeking on.
         }
 
+        $lookback = self::get_lookback_seconds();
+
         $pstudent = self::conditional_access_rate(
             $failuresbyuser[$userid],
             $courseaccess[$userid] ?? [],
-            self::LOOKBACK_SECONDS
+            $lookback
         );
 
         $matchedtotal = 0;
         $failuretotal = 0;
         foreach ($failuresbyuser as $otheruserid => $failures) {
-            $rate = self::conditional_access_rate($failures, $courseaccess[$otheruserid] ?? [], self::LOOKBACK_SECONDS);
+            $rate = self::conditional_access_rate($failures, $courseaccess[$otheruserid] ?? [], $lookback);
             if ($rate !== null) {
                 $matchedtotal += $rate * count($failures);
                 $failuretotal += count($failures);

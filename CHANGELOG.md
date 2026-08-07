@@ -125,3 +125,22 @@ All notable changes to `local_stackanalytics` are documented here.
   local_quizanalytics's nav-hook pattern exactly. Deliberately free of
   student-identifying data (§7).
 - Pure-math tests for the ANOVA and branch-classification logic.
+
+## [0.7.0] — Phase 6
+
+- `settings.php`: three admin settings replacing hardcoded constants from
+  Phases 4-5 — `questionneedsreviewthreshold` (Model 2's proxy-label pass-rate
+  cutoff, a real methodological choice flagged as such in its own
+  description string, not just a tuning knob), `lowtrafficfloor` (the
+  bloated-tree dashboard's never-reached-vs-low-traffic boundary), and
+  `helpseekinglookback` (the help-seeking-gap indicator's post-failure
+  window). Each class keeps its original constant as the fallback default
+  via a new `get_*()` accessor reading `get_config()`, so an unconfigured
+  site behaves exactly as it did before this phase.
+- `classes/privacy/provider.php`: a `null_provider`, modelled directly on the
+  sibling local_quizanalytics plugin's own privacy provider (found already
+  installed in the Moodle checkout used throughout this build) — this plugin
+  creates no tables of its own and reads everything live from core tables
+  already covered by their own privacy providers; the Analytics API's own
+  prediction storage is handled generically by core_analytics's privacy
+  provider regardless of which plugin registered the model.

@@ -21,10 +21,13 @@
  * admin_settingpage and add it to the tree itself — core\plugininfo\
  * local::load_settings() just include()s this file with $ADMIN available.
  *
- * Empty for now (Phase 0 skeleton): the indicator/target threshold settings
- * (anomaly z-score cutoff, IRT minimum sample size, seed-bias ANOVA alpha,
- * pass-rate threshold for the Model 2 proxy label) land here once those
- * classes exist, so the settings page has something to configure.
+ * These three are the hardcoded constants from Phases 4-5 worth putting in
+ * an administrator's hands rather than leaving as code-only defaults: the
+ * Model 2 proxy-label threshold (a real methodological choice, not just a
+ * tuning knob), the bloated-tree "low traffic" floor, and the help-seeking
+ * lookback window. Read via get_config() with the original class constants
+ * kept as fallback defaults, so an unconfigured site behaves exactly as it
+ * did before this phase.
  *
  * @package local_stackanalytics
  * @copyright  2026 Ernest Ting <eting@caltech.edu>
@@ -39,4 +42,28 @@ if ($hassiteconfig) {
         get_string('pluginname', 'local_stackanalytics')
     );
     $ADMIN->add('localplugins', $settings);
+
+    $settings->add(new admin_setting_configtext(
+        'local_stackanalytics/questionneedsreviewthreshold',
+        get_string('questionneedsreviewthreshold', 'local_stackanalytics'),
+        get_string('questionneedsreviewthreshold_desc', 'local_stackanalytics'),
+        \local_stackanalytics\analytics\target\question_needs_review::DEFAULT_PASSRATE_THRESHOLD,
+        PARAM_FLOAT
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_stackanalytics/lowtrafficfloor',
+        get_string('lowtrafficfloor', 'local_stackanalytics'),
+        get_string('lowtrafficfloor_desc', 'local_stackanalytics'),
+        \local_stackanalytics\diagnostics\bloated_tree_report::LOW_TRAFFIC_FLOOR,
+        PARAM_INT
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_stackanalytics/helpseekinglookback',
+        get_string('helpseekinglookback', 'local_stackanalytics'),
+        get_string('helpseekinglookback_desc', 'local_stackanalytics'),
+        \local_stackanalytics\analytics\indicator\help_seeking_gap::LOOKBACK_SECONDS,
+        PARAM_INT
+    ));
 }

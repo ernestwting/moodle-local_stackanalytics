@@ -41,8 +41,20 @@ defined('MOODLE_INTERNAL') || die();
  */
 class bloated_tree_report {
 
-    /** Below this many observed traversals (but above zero), a branch is "low-traffic" rather than "unreached". */
+    /**
+     * Below this many observed traversals (but above zero), a branch is
+     * "low-traffic" rather than "unreached". Default used when the
+     * local_stackanalytics/lowtrafficfloor admin setting (Phase 6) is unset.
+     */
     const LOW_TRAFFIC_FLOOR = 2;
+
+    /**
+     * @return int the admin-configured floor, or LOW_TRAFFIC_FLOOR if unset
+     */
+    public static function get_low_traffic_floor(): int {
+        $configured = get_config('local_stackanalytics', 'lowtrafficfloor');
+        return $configured !== false && $configured !== '' ? (int) $configured : self::LOW_TRAFFIC_FLOOR;
+    }
 
     /**
      * @param int $count
@@ -52,7 +64,7 @@ class bloated_tree_report {
         if ($count === 0) {
             return 'unreached';
         }
-        if ($count < self::LOW_TRAFFIC_FLOOR) {
+        if ($count < self::get_low_traffic_floor()) {
             return 'low_traffic';
         }
         return 'adequate';

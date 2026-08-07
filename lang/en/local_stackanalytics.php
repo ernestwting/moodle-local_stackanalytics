@@ -28,6 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 // labels the course-level Diagnostics Dashboard link (see lib.php).
 $string['pluginname'] = 'STACK Analytics';
 $string['stackanalytics:view'] = 'View STACK Analytics dashboard and predictions';
+$string['privacy:metadata'] = 'The STACK Analytics plugin does not store any personal data of its own. Its indicators and targets read finished quiz attempts, question responses, grades, and log events directly from Moodle\'s own database (mod_quiz, the question engine, grade_grades, and logstore_standard_log) at calculation time, all of which are already covered by their own privacy providers. The predictions and per-sample calculations the Analytics API produces from that data are stored by core_analytics in its own tables and handled by core_analytics\'s privacy provider, not by this plugin.';
 
 // Model 1 (student risk) indicator names — shown in Site Administration >
 // Analytics > Models when configuring/inspecting a model's indicators.
@@ -71,3 +72,11 @@ $string['coverage_low_traffic'] = 'Low traffic — review before pruning';
 $string['coverage_adequate'] = 'Adequately traversed';
 $string['unknownquestion'] = 'Unknown question';
 $string['unknownquiz'] = 'Unknown quiz';
+
+// Admin settings.
+$string['questionneedsreviewthreshold'] = 'Question-needs-review pass-rate threshold';
+$string['questionneedsreviewthreshold_desc'] = 'A question is labelled "needs review" (Model 2\'s proxy label) when its empirical pass rate falls below this value (0.0-1.0). See the architecture doc\'s §3.3 circularity caveat before lowering this to chase a particular result.';
+$string['lowtrafficfloor'] = 'Bloated-tree "low traffic" floor';
+$string['lowtrafficfloor_desc'] = 'On the Diagnostics Dashboard, a PRT branch with at least one but fewer than this many observed traversals is reported as "low traffic" (needs a human look) rather than "never reached" (a pruning candidate).';
+$string['helpseekinglookback'] = 'Help-seeking lookback window (seconds)';
+$string['helpseekinglookback_desc'] = 'How long after a STACK question failure a forum/glossary/resource access still counts as "seeking help for it", for the help-seeking-gap indicator. Defaults to one hour.';
