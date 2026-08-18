@@ -48,6 +48,14 @@ class dashboard_renderer {
         'feedbackrevisiondistance' => 'feedbackrevisiondistance',
     ];
 
+    /** @var array<string, string> indicator key => lang string suffix, in table-column order, for Model 2. */
+    const MODEL2_INDICATORS = [
+        'questiondifficultyirt' => 'questiondifficultyirt',
+        'syntaxerrorrate' => 'syntaxerrorrate',
+        'unreachednoderatio' => 'unreachednoderatio',
+        'feedbackineffectiveness' => 'feedbackineffectiveness',
+    ];
+
     /** @var array<string, string> badge 'band' token => Bootstrap badge class suffix. */
     const BAND_CLASSES = [
         'good' => 'badge-success',
@@ -112,6 +120,88 @@ class dashboard_renderer {
             $html .= self::truncated_notice(count($report->rows), $report->total);
         }
         return $html;
+    }
+
+    /**
+     * The collapsible "About this model" panel for Model 2 — the architecture
+     * doc's §3.1-3.5 content, in plain language. See render_model1_about().
+     *
+     * @return string
+     */
+    public static function render_model2_about(): string {
+        $items = '';
+        foreach (self::MODEL2_INDICATORS as $indicatorkey => $stringsuffix) {
+            $items .= \html_writer::tag('li', \html_writer::tag(
+                'strong',
+                get_string('indicator:' . $stringsuffix, 'local_stackanalytics') . ': '
+            ) . get_string('model2desc_' . $stringsuffix, 'local_stackanalytics'));
+        }
+
+        $body = \html_writer::tag('p', get_string('model2aboutbody', 'local_stackanalytics'))
+            . \html_writer::tag('ul', $items)
+            . \html_writer::tag('p', get_string('model1aboutfooter', 'local_stackanalytics'), ['class' => 'text-muted small']);
+
+        return self::about_panel(get_string('target:questionneedsreview', 'local_stackanalytics'), $body);
+    }
+
+    /**
+     * The Model 2 question table, or a "no questions" notice if there are none.
+     *
+     * @param \stdClass $report model2_report::build()'s return value
+     * @return string
+     */
+    public static function render_model2_table(\stdClass $report): string {
+        if (empty($report->rows)) {
+            return \html_writer::tag('p', get_string('model2noquestions', 'local_stackanalytics'), ['class' => 'text-muted']);
+        }
+
+        $table = new \html_table();
+        $table->head = array_merge(
+            [get_string('columnquestion', 'local_stackanalytics'), get_string('columncurrentstatus', 'local_stackanalytics')],
+            array_map(
+                fn($stringsuffix) => get_string('indicator:' . $stringsuffix, 'local_stackanalytics'),
+                array_values(self::MODEL2_INDICATORS)
+            )
+        );
+
+        foreach ($report->rows as $row) {
+            $questioncell = s($row->questionname) . \html_writer::tag('div', s($row->quizname), ['class' => 'small text-muted']);
+            $tablerow = [$questioncell, self::render_needs_review($row->needsreview)];
+            foreach (self::MODEL2_INDICATORS as $indicatorkey => $stringsuffix) {
+                $tablerow[] = self::render_indicator_cell($row->indicators[$indicatorkey], 'model2sentence_' . $stringsuffix);
+            }
+            $table->data[] = $tablerow;
+        }
+
+        $html = \html_writer::table($table);
+        if ($report->truncated) {
+            $html .= self::truncated_notice(count($report->rows), $report->total);
+        }
+        return $html;
+    }
+
+    /**
+     * The "Current status" table cell for Model 2: a needs-review badge, or a muted note if it can't be computed.
+     *
+     * @param \stdClass|null $needsreview question_needs_review::compute_for_sample()'s return value
+     * @return string
+     */
+    private static function render_needs_review(?\stdClass $needsreview): string {
+        if ($needsreview === null) {
+            return \html_writer::tag(
+                'span',
+                get_string('notenoughdata', 'local_stackanalytics'),
+                ['class' => 'text-muted small']
+            );
+        }
+
+        $stringkey = $needsreview->needsreview ? 'needsreviewyes' : 'needsreviewno';
+        $badgeclass = $needsreview->needsreview ? 'badge-warning' : 'badge-success';
+        $label = get_string($stringkey, 'local_stackanalytics', (object) [
+            'passpercent' => $needsreview->passpercent,
+            'thresholdpercent' => $needsreview->thresholdpercent,
+        ]);
+        return \html_writer::tag('span', $label, ['class' => 'badge ' . $badgeclass]);
     }
 
     /**

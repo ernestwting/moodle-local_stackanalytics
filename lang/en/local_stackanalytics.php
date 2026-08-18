@@ -107,6 +107,32 @@ $string['model1sentence_helpseekinggap'] = 'Seeks help after {$a->studentpercent
 $string['model1desc_feedbackrevisiondistance'] = 'Whether this student meaningfully changes their answer after seeing feedback, or resubmits close to the same thing.';
 $string['model1sentence_feedbackrevisiondistance'] = 'Changes their answer by {$a->changepercent}% on average, across {$a->revisions} revision(s).';
 
+// Model 2 dashboard section (index.php).
+$string['model2heading'] = 'Model 2: Question & PRT Quality';
+$string['model2intro'] = 'Flags STACK questions (and their PRT trees — the branching logic that grades each answer) that may be worth an instructor\'s review, from four signals in how students actually answer them.';
+$string['model2aboutbody'] = 'What\'s actually predicted (the "target") is: does this question\'s pass rate fall below a threshold (50% by default, an admin setting)? The four indicators below are the evidence a trained model would use for that — today, before any model is trained, this page just shows each indicator\'s current reading directly. Note: this pass-rate read and the difficulty indicator both ultimately come from the same pass rate, so treat "needs review" and "difficult" as related, not independent, signals.';
+$string['model2noquestions'] = 'No STACK questions to show for this selection.';
+$string['columnquestion'] = 'Question';
+$string['needsreviewyes'] = 'Needs review — {$a->passpercent}% pass rate, below the {$a->thresholdpercent}% threshold';
+$string['needsreviewno'] = 'No flag — {$a->passpercent}% pass rate, at or above the {$a->thresholdpercent}% threshold';
+
+$string['model2desc_questiondifficultyirt'] = 'How hard this question is in practice, from its empirical pass rate.';
+$string['model2sentence_questiondifficultyirt'] = '{$a->passpercent}% pass rate across {$a->attempts} finished attempt(s).';
+$string['model2desc_syntaxerrorrate'] = 'Whether most of this question\'s wrong answers are input/syntax mistakes (an input-format problem) rather than genuine maths errors.';
+$string['model2sentence_syntaxerrorrate'] = '{$a->syntaxerrorcount} of {$a->totalfailed} failed attempt(s) were syntax/input errors.';
+$string['model2desc_unreachednoderatio'] = 'How much of this question\'s PRT branching logic has never actually been exercised by a real attempt — a pruning candidate if it stays that way.';
+$string['model2sentence_unreachednoderatio'] = '{$a->unreachedcount} of {$a->totalbranches} PRT branch(es) never reached.';
+$string['model2desc_feedbackineffectiveness'] = 'Whether students who get this wrong tend to improve on their next try more than they would on a fresh question — a rough read on whether the feedback is actually helping.';
+$string['model2sentence_feedbackineffectiveness'] = '{$a->improvepercent}% improve after a wrong try, vs. a {$a->baselinepercent}% first-try baseline.';
+
+// Diagnostics Dashboard section (index.php) — statistical/descriptive, not
+// part of either model's ML pipeline (architecture doc §3.1).
+$string['diagnosticsheading'] = 'Diagnostics Dashboard';
+$string['diagnosticsintro'] = 'Statistical reports that don\'t fit either model above — not predictions, just direct calculations from the same attempt data.';
+
+// Section jump nav (index.php), shown once all three sections exist.
+$string['jumptosection'] = 'Jump to section:';
+
 // Admin settings.
 $string['questionneedsreviewthreshold'] = 'Question-needs-review pass-rate threshold';
 $string['questionneedsreviewthreshold_desc'] = 'A question is labelled "needs review" (Model 2\'s proxy label) when its empirical pass rate falls below this value (0.0-1.0). See the architecture doc\'s §3.3 circularity caveat before lowering this to chase a particular result.';

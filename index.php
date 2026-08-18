@@ -43,6 +43,7 @@ use local_stackanalytics\local\stack_course_helper;
 use local_stackanalytics\diagnostics\seed_bias_report;
 use local_stackanalytics\diagnostics\bloated_tree_report;
 use local_stackanalytics\analytics\report\model1_report;
+use local_stackanalytics\analytics\report\model2_report;
 use local_stackanalytics\output\dashboard_renderer;
 
 $courseid = required_param('id', PARAM_INT);
@@ -86,6 +87,12 @@ if (empty($slots)) {
     exit;
 }
 
+echo html_writer::tag('p', get_string('jumptosection', 'local_stackanalytics') . ' ' . implode(' · ', [
+    html_writer::link('#stackanalytics-model1', get_string('model1heading', 'local_stackanalytics')),
+    html_writer::link('#stackanalytics-model2', get_string('model2heading', 'local_stackanalytics')),
+    html_writer::link('#stackanalytics-diagnostics', get_string('diagnosticsheading', 'local_stackanalytics')),
+]), ['class' => 'text-muted']);
+
 echo html_writer::tag('a', '', ['id' => 'stackanalytics-model1']);
 echo $OUTPUT->heading(get_string('model1heading', 'local_stackanalytics'), 3);
 echo html_writer::tag('p', get_string('model1intro', 'local_stackanalytics'));
@@ -119,6 +126,16 @@ if (count($quizidsinslots) > 1) {
 if ($quizid !== 0) {
     $slots = array_filter($slots, fn($slot) => (int) $slot->quizid === $quizid);
 }
+
+echo html_writer::tag('a', '', ['id' => 'stackanalytics-model2']);
+echo $OUTPUT->heading(get_string('model2heading', 'local_stackanalytics'), 3);
+echo html_writer::tag('p', get_string('model2intro', 'local_stackanalytics'));
+echo dashboard_renderer::render_model2_about();
+echo dashboard_renderer::render_model2_table(model2_report::build($courseid, $quizid !== 0 ? $quizid : null));
+
+echo html_writer::tag('a', '', ['id' => 'stackanalytics-diagnostics']);
+echo $OUTPUT->heading(get_string('diagnosticsheading', 'local_stackanalytics'), 3);
+echo html_writer::tag('p', get_string('diagnosticsintro', 'local_stackanalytics'));
 
 $questionids = array_unique(array_map(fn($slot) => (int) $slot->questionid, $slots));
 $questionnames = $questionids
