@@ -43,6 +43,13 @@ use local_stackanalytics\analytics\indicator\feedback_revision_distance;
 
 defined('MOODLE_INTERNAL') || die();
 
+// Grade_item/grade_grade (lib/grade/*.php) aren't autoloaded — confirmed
+// against a real Moodle 4.5 core checkout, lib/setup.php doesn't pull them
+// in by default. index.php happens to load gradelib.php indirectly via
+// other course-page setup, which is why this was missed until pdf.php (a
+// deliberately minimal entry point) hit it directly.
+require_once($CFG->libdir . '/gradelib.php');
+
 /**
  * Assembles one row per enrolled student for the Model 1 dashboard table.
  */

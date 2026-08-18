@@ -94,7 +94,7 @@ if (empty($slots)) {
 // anchor-link "Jump to section" nav still rendered (and queried) everything
 // on every load, which is what actually made the page unusably long on a
 // course with many students/questions.
-$view = optional_param('view', 'model1', PARAM_ALPHA);
+$view = optional_param('view', 'model1', PARAM_ALPHANUM);
 if (!in_array($view, ['model1', 'model2', 'diagnostics'], true)) {
     $view = 'model1';
 }
