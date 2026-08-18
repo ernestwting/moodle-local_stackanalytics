@@ -139,6 +139,13 @@ $string['pageintro'] = '<strong>Model 1</strong> looks at each student\'s behavi
 $string['pageintrolivedata'] = 'Both models ship disabled by default, so everything below is a live reading of each signal today, not a trained AI prediction. An administrator can enable and train a model under Site Administration > Analytics > Models — once trained, real predictions appear alongside this page in Moodle\'s own Insights report.';
 $string['responsibleusecallout'] = 'A few things worth keeping in mind when reading the flags below: they\'re statistical patterns, not proof of anything — an "anomalous" response time is a prompt to check in with a student, not evidence of misconduct on its own. Small courses will show noisier, less reliable readings simply from having fewer data points to work from. And every number here is about what a student did in this course, not who they are.';
 
+// PDF export (pdf.php, dashboard_renderer::render_pdf_form()).
+$string['downloadpdfbutton'] = 'Download PDF';
+$string['pdfsectionslabel'] = 'Include in the PDF:';
+$string['pdfnorows'] = 'Nothing to show for this section — no data yet, or nothing matched the current filters.';
+$string['pdfnosections'] = 'No sections were selected for this report.';
+$string['pdffooternote'] = 'STACK Analytics Dashboard — live indicator readings, not a trained AI prediction';
+
 // Admin settings.
 $string['questionneedsreviewthreshold'] = 'Question-needs-review pass-rate threshold';
 $string['questionneedsreviewthreshold_desc'] = 'A question is labelled "needs review" (Model 2\'s proxy label) when its empirical pass rate falls below this value (0.0-1.0). See the architecture doc\'s §3.3 circularity caveat before lowering this to chase a particular result.';

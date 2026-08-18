@@ -115,58 +115,63 @@ echo $OUTPUT->render($viewselector);
 
 echo html_writer::div(get_string('responsibleusecallout', 'local_stackanalytics'), 'alert alert-warning');
 
+// Narrows Model 2/Diagnostics (both per-question) to one quiz at a time —
+// Model 1 isn't quiz-scoped (its indicators are per-student), so this
+// selector is skipped entirely on that view.
+$quizid = optional_param('quizid', 0, PARAM_INT);
+
 if ($view === 'model1') {
     echo $OUTPUT->heading(get_string('model1heading', 'local_stackanalytics'), 3);
     echo html_writer::tag('p', get_string('model1intro', 'local_stackanalytics'));
     echo dashboard_renderer::render_model1_about();
     echo dashboard_renderer::render_model1_table(model1_report::build($courseid));
-    echo $OUTPUT->footer();
-    exit;
-}
-
-// Narrows Model 2/Diagnostics (both per-question) to one quiz at a time —
-// Model 1 isn't quiz-scoped (its indicators are per-student), so it's
-// rendered above, before this selector even exists.
-$quizid = optional_param('quizid', 0, PARAM_INT);
-$quiznames = $DB->get_records_menu('quiz', ['course' => $courseid], '', 'id, name');
-
-$quizidsinslots = array_unique(array_map(fn($slot) => (int) $slot->quizid, $slots));
-if (count($quizidsinslots) > 1) {
-    $quizoptions = [];
-    foreach ($quizidsinslots as $slotquizid) {
-        $quizoptions[$slotquizid] = format_string($quiznames[$slotquizid] ?? get_string('unknownquiz', 'local_stackanalytics'));
+} else {
+    $quiznames = $DB->get_records_menu('quiz', ['course' => $courseid], '', 'id, name');
+    $quizidsinslots = array_unique(array_map(fn($slot) => (int) $slot->quizid, $slots));
+    if (count($quizidsinslots) > 1) {
+        $quizoptions = [];
+        foreach ($quizidsinslots as $slotquizid) {
+            $quizoptions[$slotquizid] =
+                format_string($quiznames[$slotquizid] ?? get_string('unknownquiz', 'local_stackanalytics'));
+        }
+        $quizselector = new single_select(
+            new moodle_url('/local/stackanalytics/index.php', ['id' => $courseid, 'view' => $view]),
+            'quizid',
+            $quizoptions,
+            $quizid,
+            [0 => get_string('allquizzes', 'local_stackanalytics')]
+        );
+        $quizselector->label = get_string('quizselectorlabel', 'local_stackanalytics');
+        echo $OUTPUT->render($quizselector);
+    } else {
+        $quizid = 0; // Only one quiz in this course — nothing to filter.
     }
-    $quizselector = new single_select(
-        new moodle_url('/local/stackanalytics/index.php', ['id' => $courseid, 'view' => $view]),
-        'quizid',
-        $quizoptions,
-        $quizid,
-        [0 => get_string('allquizzes', 'local_stackanalytics')]
-    );
-    $quizselector->label = get_string('quizselectorlabel', 'local_stackanalytics');
-    echo $OUTPUT->render($quizselector);
+
+    if ($view === 'model2') {
+        echo $OUTPUT->heading(get_string('model2heading', 'local_stackanalytics'), 3);
+        echo html_writer::tag('p', get_string('model2intro', 'local_stackanalytics'));
+        echo dashboard_renderer::render_model2_about();
+        echo dashboard_renderer::render_model2_table(model2_report::build($courseid, $quizid !== 0 ? $quizid : null));
+    } else {
+        echo $OUTPUT->heading(get_string('diagnosticsheading', 'local_stackanalytics'), 3);
+        echo html_writer::tag('p', get_string('diagnosticsintro', 'local_stackanalytics'));
+
+        if (!concept_dependency_report::is_available()) {
+            echo html_writer::tag(
+                'p',
+                get_string('conceptdependencynote', 'local_stackanalytics'),
+                ['class' => 'text-muted small']
+            );
+        }
+
+        echo dashboard_renderer::render_diagnostics_section(diagnostics_report::build($courseid, $quizid !== 0 ? $quizid : null));
+    }
 }
 
-if ($quizid !== 0) {
-    $slots = array_filter($slots, fn($slot) => (int) $slot->quizid === $quizid);
-}
-
-if ($view === 'model2') {
-    echo $OUTPUT->heading(get_string('model2heading', 'local_stackanalytics'), 3);
-    echo html_writer::tag('p', get_string('model2intro', 'local_stackanalytics'));
-    echo dashboard_renderer::render_model2_about();
-    echo dashboard_renderer::render_model2_table(model2_report::build($courseid, $quizid !== 0 ? $quizid : null));
-    echo $OUTPUT->footer();
-    exit;
-}
-
-echo $OUTPUT->heading(get_string('diagnosticsheading', 'local_stackanalytics'), 3);
-echo html_writer::tag('p', get_string('diagnosticsintro', 'local_stackanalytics'));
-
-if (!concept_dependency_report::is_available()) {
-    echo html_writer::tag('p', get_string('conceptdependencynote', 'local_stackanalytics'), ['class' => 'text-muted small']);
-}
-
-echo dashboard_renderer::render_diagnostics_section(diagnostics_report::build($courseid, $quizid !== 0 ? $quizid : null));
+echo dashboard_renderer::render_pdf_form(
+    new moodle_url('/local/stackanalytics/pdf.php'),
+    $courseid,
+    $quizid !== 0 ? $quizid : null
+);
 
 echo $OUTPUT->footer();
