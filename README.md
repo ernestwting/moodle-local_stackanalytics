@@ -28,6 +28,15 @@ non-ML diagnostics dashboard, purpose-built for courses using `qtype_stack`
   natural ground-truth label (statistical/descriptive reports, not trained
   targets). Concept-dependency mapping is stubbed as explicit future work.
 
+All three show up on one page — the **STACK Analytics Dashboard**
+(`index.php`, reached from a course's secondary navigation): a course/quiz
+selector, a plain-language explanation of what each section means, then one
+table per model (a row per student for Model 1, a row per question for
+Model 2) showing each indicator's *live reading* today — both models ship
+disabled by default (alpha stage), so nothing here is a trained AI
+prediction until an administrator enables and trains one under Site
+Administration > Analytics > Models.
+
 The full design rationale — why each detection is a target, an indicator, or a
 diagnostic rather than shoehorned into the ML pipeline — lives in
 [`docs/moodle-stack-analytics-architecture.md`](docs/moodle-stack-analytics-architecture.md)

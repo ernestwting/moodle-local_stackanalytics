@@ -2,6 +2,50 @@
 
 All notable changes to `local_stackanalytics` are documented here.
 
+## [0.9.0] — Phase 9
+
+Turned index.php from a diagnostics-only page into the full dashboard the
+architecture doc always intended: one page, three clearly-labelled
+sections (Model 1, Model 2, Diagnostics), each explained in plain
+language for a reader with no ML background, tolerant of missing data
+throughout.
+
+- Every indicator (all nine, across both models) and `question_needs_review`
+  gained a public `compute_for_sample()`, extracted from the existing
+  `calculate_sample()` — same DB-fetch and math, now returning the
+  real-world facts behind the value plus a plain-language 'good' /
+  'neutral' / 'watch' band, not just the bare [-1, 1] figure the Analytics
+  API consumes. `calculate_sample()` itself is unchanged behaviour, just a
+  one-line delegate.
+- `classes/analytics/report/model1_report.php` / `model2_report.php`:
+  build one row per enrolled student / per STACK quiz slot respectively,
+  pairing each model's direct, un-trained-model read (grade-vs-pass for
+  Model 1, pass-rate-vs-threshold for Model 2 — both models ship disabled
+  by default, alpha stage) with their indicators. Both cap at 100 rows
+  with a "showing the first N" notice.
+- `classes/output/dashboard_renderer.php`: turns those into badge+sentence
+  tables, plus a collapsible "About this model" panel per model carrying
+  the architecture doc's target/indicator-catalog content without
+  cluttering the main view.
+- `index.php`: a course selector (`stack_course_helper::get_viewable_courses()`,
+  new) and a quiz selector for courses with more than one, a "Jump to
+  section:" nav, per-question "Jump to:" links, a plain-language intro
+  explaining what each section is and that both models are un-trained, and
+  a responsible-use callout (architecture doc §7, condensed) shown before
+  the first badge on the page. The existing seed-bias/bloated-tree content
+  moved under its own "Diagnostics Dashboard" heading; a one-line note
+  covers concept-dependency mapping, which `concept_dependency_report.php`
+  already documented as intentionally unimplemented but which never
+  actually appeared anywhere on the page.
+- `tests/model1_report_test.php`, `tests/model2_report_test.php`: cover
+  each report builder's own orchestration (student-role filtering,
+  grade-vs-pass correctness, quiz filtering, empty states) using the same
+  fixture depth as the rest of this plugin's tests. Indicator values
+  themselves aren't asserted on here, for the same reason
+  `calculate_sample()` coverage is deferred elsewhere in this file: real
+  values need a full attempt-walkthrough fixture this plugin doesn't have
+  yet.
+
 ## Test fixture fix (post-Phase 8)
 
 - CI run #4 got all the way to PHPUnit and ran all 84 tests, failing only the
