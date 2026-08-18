@@ -77,7 +77,22 @@ class grade_trajectory extends \core_analytics\local\indicator\linear {
      * @return float|null
      */
     protected function calculate_sample($sampleid, $sampleorigin, $starttime, $endtime) {
-        $enrolment = stack_course_helper::get_enrolment_user_and_course((int) $sampleid);
+        return self::compute_for_sample((int) $sampleid, $starttime, $endtime)->indicator ?? null;
+    }
+
+    /**
+     * Dashboard-facing computation: the same value calculate_sample() feeds
+     * to the Analytics API, plus the real-world facts and a plain-language
+     * band a non-technical reader can act on without knowing what a [-1, 1]
+     * indicator scale means.
+     *
+     * @param int $sampleid a user_enrolments.id
+     * @param int|false $starttime
+     * @param int|false $endtime
+     * @return \stdClass|null null if there isn't enough data yet
+     */
+    public static function compute_for_sample(int $sampleid, $starttime = false, $endtime = false): ?\stdClass {
+        $enrolment = stack_course_helper::get_enrolment_user_and_course($sampleid);
         if (!$enrolment) {
             return null;
         }
@@ -107,6 +122,17 @@ class grade_trajectory extends \core_analytics\local\indicator\linear {
             return null;
         }
 
-        return self::scale_to_indicator($totalgrade / $count, $totalmax / $count);
+        $meangrade = $totalgrade / $count;
+        $meanmax = $totalmax / $count;
+        $indicator = self::scale_to_indicator($meangrade, $meanmax);
+
+        return (object) [
+            'indicator' => $indicator,
+            'band' => $indicator >= 0.33 ? 'good' : ($indicator <= -0.33 ? 'watch' : 'neutral'),
+            'summary' => [
+                'meanpercent' => $meanmax > 0.0 ? round(100.0 * $meangrade / $meanmax, 1) : 0.0,
+                'attempts' => $count,
+            ],
+        ];
     }
 }

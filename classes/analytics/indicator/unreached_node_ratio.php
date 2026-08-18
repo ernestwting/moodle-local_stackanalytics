@@ -71,7 +71,20 @@ class unreached_node_ratio extends \core_analytics\local\indicator\linear {
      * @return float|null
      */
     protected function calculate_sample($sampleid, $sampleorigin, $starttime, $endtime) {
-        $slots = stack_course_helper::get_stack_slots([(int) $sampleid]);
+        return self::compute_for_sample((int) $sampleid)->indicator ?? null;
+    }
+
+    /**
+     * Dashboard-facing computation — see grade_trajectory::compute_for_sample()
+     * for the shared contract. High indicator = a large share of this
+     * question's PRT branches have never been exercised by a real attempt
+     * (pruning candidates).
+     *
+     * @param int $sampleid a quiz_slots.id
+     * @return \stdClass|null null if there isn't enough data yet
+     */
+    public static function compute_for_sample(int $sampleid): ?\stdClass {
+        $slots = stack_course_helper::get_stack_slots([$sampleid]);
         if (empty($slots[$sampleid])) {
             return null;
         }
@@ -90,6 +103,15 @@ class unreached_node_ratio extends \core_analytics\local\indicator\linear {
             return null;
         }
 
-        return self::ratio_to_indicator($ratio);
+        $indicator = self::ratio_to_indicator($ratio);
+
+        return (object) [
+            'indicator' => $indicator,
+            'band' => $indicator >= 0.33 ? 'watch' : ($indicator <= -0.33 ? 'good' : 'neutral'),
+            'summary' => [
+                'unreachedcount' => count($branches) - $reached,
+                'totalbranches' => count($branches),
+            ],
+        ];
     }
 }

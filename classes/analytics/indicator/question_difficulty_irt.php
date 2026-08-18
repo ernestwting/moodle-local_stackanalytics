@@ -110,7 +110,19 @@ class question_difficulty_irt extends \core_analytics\local\indicator\linear {
      * @return float|null
      */
     protected function calculate_sample($sampleid, $sampleorigin, $starttime, $endtime) {
-        $slots = stack_course_helper::get_stack_slots([(int) $sampleid]);
+        return self::compute_for_sample((int) $sampleid)->indicator ?? null;
+    }
+
+    /**
+     * Dashboard-facing computation — see grade_trajectory::compute_for_sample()
+     * for the shared contract. High indicator = harder question (worth a
+     * look); low = easier than most.
+     *
+     * @param int $sampleid a quiz_slots.id
+     * @return \stdClass|null null if there isn't enough data yet
+     */
+    public static function compute_for_sample(int $sampleid): ?\stdClass {
+        $slots = stack_course_helper::get_stack_slots([$sampleid]);
         if (empty($slots[$sampleid])) {
             return null;
         }
@@ -122,6 +134,15 @@ class question_difficulty_irt extends \core_analytics\local\indicator\linear {
         }
 
         $passrate = array_sum($fractions) / count($fractions);
-        return self::logit_to_indicator(self::passrate_to_logit($passrate));
+        $indicator = self::logit_to_indicator(self::passrate_to_logit($passrate));
+
+        return (object) [
+            'indicator' => $indicator,
+            'band' => $indicator >= 0.33 ? 'watch' : ($indicator <= -0.33 ? 'good' : 'neutral'),
+            'summary' => [
+                'passpercent' => round(100.0 * $passrate, 0),
+                'attempts' => count($fractions),
+            ],
+        ];
     }
 }

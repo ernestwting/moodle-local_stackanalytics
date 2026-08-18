@@ -15,19 +15,22 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * STACK Diagnostics Dashboard — the non-ML half of this plugin (architecture
- * doc §3.1's "separate STACK Diagnostics Dashboard": seed-bias ANOVA and
- * bloated-PRT-tree coverage, computed directly rather than through the
- * Analytics API's ML machinery). One row per STACK question slot in the
- * course; Model 1/2's trained predictions live in Moodle's own Site
+ * STACK Analytics Dashboard — one page, three sections, one per the
+ * architecture doc's own structure: Model 1 (student risk & behaviour, §2),
+ * Model 2 (question/PRT quality, §3), and the non-ML Diagnostics Dashboard
+ * (seed-bias ANOVA and bloated-PRT-tree coverage, computed directly rather
+ * than through the Analytics API's ML machinery, §3.1's "separate STACK
+ * Diagnostics Dashboard"). Both models ship disabled by default (alpha
+ * stage — see db/analytics.php), so what this page shows is each model's
+ * *live indicator readings*, not a trained model's predictions; those, once
+ * an administrator enables and trains a model, live in Moodle's own Site
  * Administration > Analytics > Insights instead.
  *
  * Reached from the course's secondary navigation "STACK Analytics" entry
  * (see lib.php's local_stackanalytics_extend_navigation_course()), or
- * directly via /local/stackanalytics/index.php?id=<courseid>.
- *
- * Deliberately free of student-identifying data (architecture doc §7's
- * data-minimization note) — this page is about questions, not people.
+ * directly via /local/stackanalytics/index.php?id=<courseid> — the
+ * course selector at the top of the page switches between any course the
+ * viewer has local/stackanalytics:view in.
  *
  * @package local_stackanalytics
  * @copyright  2026 Ernest Ting <eting@caltech.edu>
@@ -55,6 +58,23 @@ $PAGE->set_heading($course->fullname);
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('dashboardtitle', 'local_stackanalytics'));
+
+$viewablecourses = stack_course_helper::get_viewable_courses();
+if (count($viewablecourses) > 1) {
+    $courseoptions = [];
+    foreach ($viewablecourses as $viewablecourse) {
+        $courseoptions[$viewablecourse->id] = format_string($viewablecourse->fullname);
+    }
+    $courseselector = new single_select(
+        new moodle_url('/local/stackanalytics/index.php'),
+        'id',
+        $courseoptions,
+        $courseid,
+        null
+    );
+    $courseselector->label = get_string('courseselectorlabel', 'local_stackanalytics');
+    echo $OUTPUT->render($courseselector);
+}
 
 $slots = stack_course_helper::get_course_stack_slots($courseid);
 

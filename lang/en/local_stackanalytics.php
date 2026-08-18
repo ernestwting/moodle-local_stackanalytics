@@ -51,9 +51,11 @@ $string['indicator:feedbackineffectiveness'] = 'STACK feedback ineffectiveness';
 // Model 2 target.
 $string['target:questionneedsreview'] = 'STACK question/PRT needs review';
 
-// Diagnostics Dashboard (index.php) — statistical/descriptive, not part of
-// the ML pipeline (architecture doc §3.1).
-$string['dashboardtitle'] = 'STACK Diagnostics Dashboard';
+// The dashboard (index.php) — Model 1, Model 2, and the non-ML Diagnostics
+// Dashboard (architecture doc §3.1) all live on this one page, one section
+// each.
+$string['dashboardtitle'] = 'STACK Analytics Dashboard';
+$string['courseselectorlabel'] = 'Course:';
 $string['seedbiasheading'] = 'Seed bias (one-way ANOVA across random seeds)';
 $string['bloatedtreeheading'] = 'PRT branch coverage';
 $string['seedgroups'] = 'Distinct seeds observed';

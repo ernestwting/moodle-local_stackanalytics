@@ -25,8 +25,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Adds a "STACK Diagnostics" link to a course's own administration
- * navigation, pointing at this plugin's Diagnostics Dashboard (index.php).
+ * Adds a "STACK Analytics" link to a course's own administration
+ * navigation, pointing at this plugin's Analytics Dashboard (index.php).
  *
  * Mirrors local_quizanalytics_extend_navigation_course() (local_quizanalytics/lib.php)
  * exactly: local_ plugins get this callback invoked automatically for every

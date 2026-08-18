@@ -126,7 +126,20 @@ class help_seeking_gap extends \core_analytics\local\indicator\linear {
      * @return float|null
      */
     protected function calculate_sample($sampleid, $sampleorigin, $starttime, $endtime) {
-        $enrolment = stack_course_helper::get_enrolment_user_and_course((int) $sampleid);
+        return self::compute_for_sample((int) $sampleid, $starttime, $endtime)->indicator ?? null;
+    }
+
+    /**
+     * Dashboard-facing computation — see grade_trajectory::compute_for_sample()
+     * for the shared contract.
+     *
+     * @param int $sampleid a user_enrolments.id
+     * @param int|false $starttime
+     * @param int|false $endtime
+     * @return \stdClass|null null if there isn't enough data yet
+     */
+    public static function compute_for_sample(int $sampleid, $starttime = false, $endtime = false): ?\stdClass {
+        $enrolment = stack_course_helper::get_enrolment_user_and_course($sampleid);
         if (!$enrolment) {
             return null;
         }
@@ -164,6 +177,15 @@ class help_seeking_gap extends \core_analytics\local\indicator\linear {
         }
         $pbaseline = $failuretotal > 0 ? $matchedtotal / $failuretotal : 0.0;
 
-        return self::conditional_probability_to_indicator($pstudent, $pbaseline);
+        $indicator = self::conditional_probability_to_indicator($pstudent, $pbaseline);
+
+        return (object) [
+            'indicator' => $indicator,
+            'band' => $indicator <= -0.33 ? 'watch' : ($indicator >= 0.33 ? 'good' : 'neutral'),
+            'summary' => [
+                'studentpercent' => round(100.0 * $pstudent, 0),
+                'baselinepercent' => round(100.0 * $pbaseline, 0),
+            ],
+        ];
     }
 }

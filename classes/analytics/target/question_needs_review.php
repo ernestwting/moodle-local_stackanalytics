@@ -123,7 +123,19 @@ class question_needs_review extends \core_analytics\local\target\binary {
      * @return float|null 0 -> pass rate at/above threshold, 1 -> needs review
      */
     protected function calculate_sample($sampleid, \core_analytics\analysable $course, $starttime = false, $endtime = false) {
-        $slots = stack_course_helper::get_stack_slots([(int) $sampleid]);
+        return self::compute_for_sample((int) $sampleid)->needsreview ?? null;
+    }
+
+    /**
+     * Dashboard-facing computation: the same pass-rate-threshold read
+     * calculate_sample() feeds to the Analytics API, plus the real-world
+     * pass rate so a teacher isn't just shown a bare 0/1.
+     *
+     * @param int $sampleid a quiz_slots.id
+     * @return \stdClass|null null if there isn't enough data yet (no basis for a label)
+     */
+    public static function compute_for_sample(int $sampleid): ?\stdClass {
+        $slots = stack_course_helper::get_stack_slots([$sampleid]);
         if (empty($slots[$sampleid])) {
             return null;
         }
@@ -135,6 +147,12 @@ class question_needs_review extends \core_analytics\local\target\binary {
         }
 
         $passrate = array_sum($fractions) / count($fractions);
-        return $passrate < self::get_passrate_threshold() ? 1 : 0;
+        $threshold = self::get_passrate_threshold();
+
+        return (object) [
+            'needsreview' => $passrate < $threshold ? 1 : 0,
+            'passpercent' => round(100.0 * $passrate, 0),
+            'thresholdpercent' => round(100.0 * $threshold, 0),
+        ];
     }
 }

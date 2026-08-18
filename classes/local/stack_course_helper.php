@@ -60,6 +60,30 @@ class stack_course_helper {
     }
 
     /**
+     * Every course the current user can view this plugin's dashboard in and
+     * that actually has STACK activity — the dashboard's course-selector
+     * list. Deliberately excludes courses the user can access the dashboard
+     * for but that have no STACK questions at all, since there would be
+     * nothing to show.
+     *
+     * get_user_capability_course() (lib/accesslib.php) is core's own
+     * "list every course this user has capability X in" API — confirmed
+     * against a real Moodle 4.5 core checkout rather than assumed, since it
+     * returns false (not an empty array) when the user has the capability
+     * nowhere.
+     *
+     * @return \stdClass[] each with ->id, ->shortname, ->fullname, sorted by fullname
+     */
+    public static function get_viewable_courses(): array {
+        $courses = get_user_capability_course('local/stackanalytics:view', null, true, 'shortname,fullname', 'fullname');
+        if ($courses === false) {
+            return [];
+        }
+
+        return array_values(array_filter($courses, fn($course) => self::course_has_stack_activity((int) $course->id)));
+    }
+
+    /**
      * Resolves a Model 1 sample id back to the (userid, courseid) pair it
      * represents.
      *

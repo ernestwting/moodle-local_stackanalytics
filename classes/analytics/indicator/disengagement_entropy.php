@@ -139,7 +139,20 @@ class disengagement_entropy extends \core_analytics\local\indicator\linear {
      * @return float|null
      */
     protected function calculate_sample($sampleid, $sampleorigin, $starttime, $endtime) {
-        $enrolment = stack_course_helper::get_enrolment_user_and_course((int) $sampleid);
+        return self::compute_for_sample((int) $sampleid, $starttime, $endtime)->indicator ?? null;
+    }
+
+    /**
+     * Dashboard-facing computation — see grade_trajectory::compute_for_sample()
+     * for the shared contract.
+     *
+     * @param int $sampleid a user_enrolments.id
+     * @param int|false $starttime
+     * @param int|false $endtime
+     * @return \stdClass|null null if there isn't enough data yet
+     */
+    public static function compute_for_sample(int $sampleid, $starttime = false, $endtime = false): ?\stdClass {
+        $enrolment = stack_course_helper::get_enrolment_user_and_course($sampleid);
         if (!$enrolment) {
             return null;
         }
@@ -170,8 +183,18 @@ class disengagement_entropy extends \core_analytics\local\indicator\linear {
         if ($entropyratio === null) {
             $entropyratio = 1.0; // Too few gaps to judge rhythm — assume "engaged" rather than penalise sparse data.
         }
-        $abandonmentrate = count($attempts) > 0 ? $abandoned / count($attempts) : 0.0;
+        $attemptcount = count($attempts);
+        $abandonmentrate = $attemptcount > 0 ? $abandoned / $attemptcount : 0.0;
 
-        return self::composite_to_indicator($entropyratio, $abandonmentrate);
+        $indicator = self::composite_to_indicator($entropyratio, $abandonmentrate);
+
+        return (object) [
+            'indicator' => $indicator,
+            'band' => $indicator >= 0.33 ? 'watch' : ($indicator <= -0.33 ? 'good' : 'neutral'),
+            'summary' => [
+                'abandonedcount' => $abandoned,
+                'attempts' => $attemptcount,
+            ],
+        ];
     }
 }

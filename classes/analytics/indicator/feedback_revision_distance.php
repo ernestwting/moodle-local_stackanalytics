@@ -107,7 +107,22 @@ class feedback_revision_distance extends \core_analytics\local\indicator\linear 
      * @return float|null
      */
     protected function calculate_sample($sampleid, $sampleorigin, $starttime, $endtime) {
-        $enrolment = stack_course_helper::get_enrolment_user_and_course((int) $sampleid);
+        return self::compute_for_sample((int) $sampleid, $starttime, $endtime)->indicator ?? null;
+    }
+
+    /**
+     * Dashboard-facing computation — see grade_trajectory::compute_for_sample()
+     * for the shared contract. A high indicator here means the student's
+     * revisions barely changed after seeing feedback (concerning); a low one
+     * means they revised substantially (good).
+     *
+     * @param int $sampleid a user_enrolments.id
+     * @param int|false $starttime
+     * @param int|false $endtime
+     * @return \stdClass|null null if there isn't enough data yet
+     */
+    public static function compute_for_sample(int $sampleid, $starttime = false, $endtime = false): ?\stdClass {
+        $enrolment = stack_course_helper::get_enrolment_user_and_course($sampleid);
         if (!$enrolment) {
             return null;
         }
@@ -141,6 +156,16 @@ class feedback_revision_distance extends \core_analytics\local\indicator\linear 
             return null; // Only single-try attempts in this window — nothing to compare revisions against.
         }
 
-        return self::distance_to_indicator(array_sum($distances) / count($distances));
+        $avgdistance = array_sum($distances) / count($distances);
+        $indicator = self::distance_to_indicator($avgdistance);
+
+        return (object) [
+            'indicator' => $indicator,
+            'band' => $indicator >= 0.33 ? 'watch' : ($indicator <= -0.33 ? 'good' : 'neutral'),
+            'summary' => [
+                'changepercent' => round(100.0 * $avgdistance, 0),
+                'revisions' => count($distances),
+            ],
+        ];
     }
 }

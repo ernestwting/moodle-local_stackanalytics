@@ -106,7 +106,23 @@ class response_latency_anomaly extends \core_analytics\local\indicator\linear {
      * @return float|null
      */
     protected function calculate_sample($sampleid, $sampleorigin, $starttime, $endtime) {
-        $enrolment = stack_course_helper::get_enrolment_user_and_course((int) $sampleid);
+        return self::compute_for_sample((int) $sampleid, $starttime, $endtime)->indicator ?? null;
+    }
+
+    /**
+     * Dashboard-facing computation — see grade_trajectory::compute_for_sample()
+     * for the shared contract. Only the "implausibly fast" direction is ever
+     * flagged (see class docblock): a slower-than-cohort student isn't
+     * anomalous by this measure, so 'good' is never returned here, only
+     * 'watch' (anomalously fast) or 'neutral'.
+     *
+     * @param int $sampleid a user_enrolments.id
+     * @param int|false $starttime
+     * @param int|false $endtime
+     * @return \stdClass|null null if there isn't enough data yet
+     */
+    public static function compute_for_sample(int $sampleid, $starttime = false, $endtime = false): ?\stdClass {
+        $enrolment = stack_course_helper::get_enrolment_user_and_course($sampleid);
         if (!$enrolment) {
             return null;
         }
@@ -135,6 +151,15 @@ class response_latency_anomaly extends \core_analytics\local\indicator\linear {
             return null; // No variation in the cohort to compare against (e.g. a single-attempt course).
         }
 
-        return self::zscore_to_indicator($z);
+        $indicator = self::zscore_to_indicator($z);
+
+        return (object) [
+            'indicator' => $indicator,
+            'band' => $indicator >= 0.33 ? 'watch' : 'neutral',
+            'summary' => [
+                'userseconds' => round($usermean, 1),
+                'cohortseconds' => round($cohortmean, 1),
+            ],
+        ];
     }
 }

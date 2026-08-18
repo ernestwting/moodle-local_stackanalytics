@@ -90,7 +90,20 @@ class syntax_error_rate extends \core_analytics\local\indicator\linear {
      * @return float|null
      */
     protected function calculate_sample($sampleid, $sampleorigin, $starttime, $endtime) {
-        $slots = stack_course_helper::get_stack_slots([(int) $sampleid]);
+        return self::compute_for_sample((int) $sampleid)->indicator ?? null;
+    }
+
+    /**
+     * Dashboard-facing computation — see grade_trajectory::compute_for_sample()
+     * for the shared contract. High indicator = most of this question's
+     * failures were input/syntax errors rather than wrong maths (worth a
+     * look at the input format, not the maths).
+     *
+     * @param int $sampleid a quiz_slots.id
+     * @return \stdClass|null null if there isn't enough data yet
+     */
+    public static function compute_for_sample(int $sampleid): ?\stdClass {
+        $slots = stack_course_helper::get_stack_slots([$sampleid]);
         if (empty($slots[$sampleid])) {
             return null;
         }
@@ -112,6 +125,18 @@ class syntax_error_rate extends \core_analytics\local\indicator\linear {
             }
         }
 
-        return self::proportion_to_indicator($invalidcount, $totalfailedcount);
+        $indicator = self::proportion_to_indicator($invalidcount, $totalfailedcount);
+        if ($indicator === null) {
+            return null; // No failed attempts to judge a proportion from.
+        }
+
+        return (object) [
+            'indicator' => $indicator,
+            'band' => $indicator >= 0.33 ? 'watch' : ($indicator <= -0.33 ? 'good' : 'neutral'),
+            'summary' => [
+                'syntaxerrorcount' => $invalidcount,
+                'totalfailed' => $totalfailedcount,
+            ],
+        ];
     }
 }
