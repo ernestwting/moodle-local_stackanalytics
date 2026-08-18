@@ -42,6 +42,8 @@ require_once(__DIR__ . '/../../config.php');
 use local_stackanalytics\local\stack_course_helper;
 use local_stackanalytics\diagnostics\seed_bias_report;
 use local_stackanalytics\diagnostics\bloated_tree_report;
+use local_stackanalytics\analytics\report\model1_report;
+use local_stackanalytics\output\dashboard_renderer;
 
 $courseid = required_param('id', PARAM_INT);
 $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
@@ -83,6 +85,12 @@ if (empty($slots)) {
     echo $OUTPUT->footer();
     exit;
 }
+
+echo html_writer::tag('a', '', ['id' => 'stackanalytics-model1']);
+echo $OUTPUT->heading(get_string('model1heading', 'local_stackanalytics'), 3);
+echo html_writer::tag('p', get_string('model1intro', 'local_stackanalytics'));
+echo dashboard_renderer::render_model1_about();
+echo dashboard_renderer::render_model1_table(model1_report::build($courseid));
 
 // Narrows the (potentially very long) per-question Diagnostics section below
 // to one quiz at a time — the course-wide Model 1 section further down isn't
