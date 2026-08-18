@@ -134,6 +134,11 @@ $string['conceptdependencynote'] = 'Concept-dependency mapping (finding which qu
 // Section jump nav (index.php), shown once all three sections exist.
 $string['jumptosection'] = 'Jump to section:';
 
+// Top-of-page framing (index.php) — read before the three sections below.
+$string['pageintro'] = '<strong>Model 1</strong> looks at each student\'s behaviour, to flag who might be at risk of not passing. <strong>Model 2</strong> looks at each question\'s marking logic (its PRT), to flag ones that might be worth a teacher\'s review. <strong>Diagnostics Dashboard</strong> is a set of statistical reports that don\'t fit either model — not predictions, just direct calculations from the same attempt data.';
+$string['pageintrolivedata'] = 'Both models ship disabled by default, so everything below is a live reading of each signal today, not a trained AI prediction. An administrator can enable and train a model under Site Administration > Analytics > Models — once trained, real predictions appear alongside this page in Moodle\'s own Insights report.';
+$string['responsibleusecallout'] = 'A few things worth keeping in mind when reading the flags below: they\'re statistical patterns, not proof of anything — an "anomalous" response time is a prompt to check in with a student, not evidence of misconduct on its own. Small courses will show noisier, less reliable readings simply from having fewer data points to work from. And every number here is about what a student did in this course, not who they are.';
+
 // Admin settings.
 $string['questionneedsreviewthreshold'] = 'Question-needs-review pass-rate threshold';
 $string['questionneedsreviewthreshold_desc'] = 'A question is labelled "needs review" (Model 2\'s proxy label) when its empirical pass rate falls below this value (0.0-1.0). See the architecture doc\'s §3.3 circularity caveat before lowering this to chase a particular result.';

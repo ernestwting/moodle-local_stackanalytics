@@ -63,6 +63,9 @@ $PAGE->set_heading($course->fullname);
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('dashboardtitle', 'local_stackanalytics'));
 
+echo html_writer::div(get_string('pageintro', 'local_stackanalytics'), 'alert alert-info');
+echo html_writer::div(get_string('pageintrolivedata', 'local_stackanalytics'), 'alert alert-info');
+
 $viewablecourses = stack_course_helper::get_viewable_courses();
 if (count($viewablecourses) > 1) {
     $courseoptions = [];
@@ -93,6 +96,8 @@ echo html_writer::tag('p', get_string('jumptosection', 'local_stackanalytics') .
     html_writer::link('#stackanalytics-model2', get_string('model2heading', 'local_stackanalytics')),
     html_writer::link('#stackanalytics-diagnostics', get_string('diagnosticsheading', 'local_stackanalytics')),
 ]), ['class' => 'text-muted']);
+
+echo html_writer::div(get_string('responsibleusecallout', 'local_stackanalytics'), 'alert alert-warning');
 
 echo html_writer::tag('a', '', ['id' => 'stackanalytics-model1']);
 echo $OUTPUT->heading(get_string('model1heading', 'local_stackanalytics'), 3);
@@ -140,6 +145,14 @@ echo html_writer::tag('p', get_string('diagnosticsintro', 'local_stackanalytics'
 
 if (!concept_dependency_report::is_available()) {
     echo html_writer::tag('p', get_string('conceptdependencynote', 'local_stackanalytics'), ['class' => 'text-muted small']);
+}
+
+// Soft cap, same purpose as model1_report::MAX_ROWS/model2_report::MAX_ROWS —
+// a course with many STACK questions shouldn't make this page unusably slow.
+$diagnosticsslotstotal = count($slots);
+$maxdiagnosticsslots = 100;
+if ($diagnosticsslotstotal > $maxdiagnosticsslots) {
+    $slots = array_slice($slots, 0, $maxdiagnosticsslots, true);
 }
 
 $questionids = array_unique(array_map(fn($slot) => (int) $slot->questionid, $slots));
@@ -214,6 +227,13 @@ foreach ($slots as $slot) {
         }
         echo html_writer::table($table);
     }
+}
+
+if ($diagnosticsslotstotal > $maxdiagnosticsslots) {
+    echo html_writer::tag('p', get_string('truncatednotice', 'local_stackanalytics', (object) [
+        'shown' => count($slots),
+        'total' => $diagnosticsslotstotal,
+    ]), ['class' => 'text-muted small']);
 }
 
 echo $OUTPUT->footer();
