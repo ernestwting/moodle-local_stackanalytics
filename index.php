@@ -42,6 +42,7 @@ require_once(__DIR__ . '/../../config.php');
 use local_stackanalytics\local\stack_course_helper;
 use local_stackanalytics\diagnostics\seed_bias_report;
 use local_stackanalytics\diagnostics\bloated_tree_report;
+use local_stackanalytics\diagnostics\concept_dependency_report;
 use local_stackanalytics\analytics\report\model1_report;
 use local_stackanalytics\analytics\report\model2_report;
 use local_stackanalytics\output\dashboard_renderer;
@@ -136,6 +137,10 @@ echo dashboard_renderer::render_model2_table(model2_report::build($courseid, $qu
 echo html_writer::tag('a', '', ['id' => 'stackanalytics-diagnostics']);
 echo $OUTPUT->heading(get_string('diagnosticsheading', 'local_stackanalytics'), 3);
 echo html_writer::tag('p', get_string('diagnosticsintro', 'local_stackanalytics'));
+
+if (!concept_dependency_report::is_available()) {
+    echo html_writer::tag('p', get_string('conceptdependencynote', 'local_stackanalytics'), ['class' => 'text-muted small']);
+}
 
 $questionids = array_unique(array_map(fn($slot) => (int) $slot->questionid, $slots));
 $questionnames = $questionids

@@ -129,6 +129,7 @@ $string['model2sentence_feedbackineffectiveness'] = '{$a->improvepercent}% impro
 // part of either model's ML pipeline (architecture doc §3.1).
 $string['diagnosticsheading'] = 'Diagnostics Dashboard';
 $string['diagnosticsintro'] = 'Statistical reports that don\'t fit either model above — not predictions, just direct calculations from the same attempt data.';
+$string['conceptdependencynote'] = 'Concept-dependency mapping (finding which questions\' failures tend to predict failures on others) isn\'t implemented in this plugin yet — the architecture doc frames it as offline sequence-mining work outside a live dashboard page, not something to half-build here. Noted so it doesn\'t just silently not appear.';
 
 // Section jump nav (index.php), shown once all three sections exist.
 $string['jumptosection'] = 'Jump to section:';
