@@ -29,13 +29,17 @@ non-ML diagnostics dashboard, purpose-built for courses using `qtype_stack`
   targets). Concept-dependency mapping is stubbed as explicit future work.
 
 All three show up on one page — the **STACK Analytics Dashboard**
-(`index.php`, reached from a course's secondary navigation): a course/quiz
-selector, a plain-language explanation of what each section means, then one
-table per model (a row per student for Model 1, a row per question for
-Model 2) showing each indicator's *live reading* today — both models ship
-disabled by default (alpha stage), so nothing here is a trained AI
-prediction until an administrator enables and trains one under Site
-Administration > Analytics > Models.
+(`index.php`, reached from a course's secondary navigation): a course
+selector, a "View:" switcher that shows exactly one section at a time, and
+a plain-language explanation of what each section means. Model 1/2 are each
+a table (a row per student / a row per question) showing each indicator's
+*live reading* today — both models ship disabled by default (alpha stage),
+so nothing here is a trained AI prediction until an administrator enables
+and trains one under Site Administration > Analytics > Models. The
+Diagnostics section is a collapsed-by-default list, one question per row,
+expandable for the full statistics. A "Download PDF" form at the bottom of
+every view re-derives whichever sections are ticked as a landscape PDF
+report, via Moodle core's own bundled TCPDF.
 
 The full design rationale — why each detection is a target, an indicator, or a
 diagnostic rather than shoehorned into the ML pipeline — lives in

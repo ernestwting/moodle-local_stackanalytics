@@ -2,6 +2,38 @@
 
 All notable changes to `local_stackanalytics` are documented here.
 
+## [0.10.0] — Phase 10
+
+Follow-up to Phase 9's dashboard revamp, from real usage feedback on a
+live course: the page was still too long, the Diagnostics section was
+still hard to read, and there was no way to get the data off the page.
+
+- **View switcher.** Replaced the anchor-link "Jump to section" nav with
+  a real "View:" selector — exactly one of Model 1/Model 2/Diagnostics
+  renders (and queries) per page load now, not all three every time,
+  which is what was actually making the page long.
+- **Diagnostics readability.** New `classes/analytics/report/diagnostics_report.php`
+  wraps `seed_bias_report`/`bloated_tree_report`'s existing results with
+  a 'good'/'neutral'/'watch' band, same convention as the Model 1/2
+  indicators. `dashboard_renderer::render_diagnostics_section()` renders
+  each question as a collapsed-by-default `<details>` block — scannable
+  from its summary line alone, full raw ANOVA/branch tables still
+  available inside on expand.
+- **PDF export.** `classes/analytics/stackanalytics_pdf.php` extends
+  Moodle core's own bundled TCPDF (`lib/pdflib.php`) rather than
+  vendoring a separate copy — confirmed core has shipped TCPDF for
+  its own PDF features for years, so there's nothing to duplicate here.
+  `pdf_content.php` re-derives each section as plain-text tables from
+  the same report-builder classes the dashboard uses; `pdf_builder.php`
+  renders them via `writeHTML()`, landscape A4. A checkbox-driven
+  "Download PDF" form sits at the bottom of every view. Built and
+  visually verified an actual PDF against the live Moodle instance
+  while developing this (not just reviewed as code) — caught two real
+  bugs that way: core's bundled TCPDF has no `dejavusans` font (needed
+  `freesans` instead, for its full Unicode coverage), and the initial
+  column-width formula left the Diagnostics table's third column
+  absorbing almost all the width.
+
 ## [0.9.0] — Phase 9
 
 Turned index.php from a diagnostics-only page into the full dashboard the
