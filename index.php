@@ -66,7 +66,9 @@ if (empty($slots)) {
 
 $quiznames = $DB->get_records_menu('quiz', ['course' => $courseid], '', 'id, name');
 $questionids = array_unique(array_map(fn($slot) => (int) $slot->questionid, $slots));
-$questionnames = $questionids ? $DB->get_records_menu('question', ['id' => $questionids], '', 'id, name') : [];
+$questionnames = $questionids
+    ? array_map(fn($q) => $q->name, $DB->get_records_list('question', 'id', $questionids, '', 'id, name'))
+    : [];
 
 foreach ($slots as $slot) {
     $questionname = $questionnames[$slot->questionid] ?? get_string('unknownquestion', 'local_stackanalytics');
