@@ -91,24 +91,43 @@ if (empty($slots)) {
     exit;
 }
 
-echo html_writer::tag('p', get_string('jumptosection', 'local_stackanalytics') . ' ' . implode(' · ', [
-    html_writer::link('#stackanalytics-model1', get_string('model1heading', 'local_stackanalytics')),
-    html_writer::link('#stackanalytics-model2', get_string('model2heading', 'local_stackanalytics')),
-    html_writer::link('#stackanalytics-diagnostics', get_string('diagnosticsheading', 'local_stackanalytics')),
-]), ['class' => 'text-muted']);
+// One section rendered per page load, not all three at once — the previous
+// anchor-link "Jump to section" nav still rendered (and queried) everything
+// on every load, which is what actually made the page unusably long on a
+// course with many students/questions.
+$view = optional_param('view', 'model1', PARAM_ALPHA);
+if (!in_array($view, ['model1', 'model2', 'diagnostics'], true)) {
+    $view = 'model1';
+}
+$viewoptions = [
+    'model1' => get_string('model1heading', 'local_stackanalytics'),
+    'model2' => get_string('model2heading', 'local_stackanalytics'),
+    'diagnostics' => get_string('diagnosticsheading', 'local_stackanalytics'),
+];
+$viewselector = new single_select(
+    new moodle_url('/local/stackanalytics/index.php', ['id' => $courseid]),
+    'view',
+    $viewoptions,
+    $view,
+    null
+);
+$viewselector->label = get_string('viewselectorlabel', 'local_stackanalytics');
+echo $OUTPUT->render($viewselector);
 
 echo html_writer::div(get_string('responsibleusecallout', 'local_stackanalytics'), 'alert alert-warning');
 
-echo html_writer::tag('a', '', ['id' => 'stackanalytics-model1']);
-echo $OUTPUT->heading(get_string('model1heading', 'local_stackanalytics'), 3);
-echo html_writer::tag('p', get_string('model1intro', 'local_stackanalytics'));
-echo dashboard_renderer::render_model1_about();
-echo dashboard_renderer::render_model1_table(model1_report::build($courseid));
+if ($view === 'model1') {
+    echo $OUTPUT->heading(get_string('model1heading', 'local_stackanalytics'), 3);
+    echo html_writer::tag('p', get_string('model1intro', 'local_stackanalytics'));
+    echo dashboard_renderer::render_model1_about();
+    echo dashboard_renderer::render_model1_table(model1_report::build($courseid));
+    echo $OUTPUT->footer();
+    exit;
+}
 
-// Narrows the (potentially very long) per-question Diagnostics section below
-// to one quiz at a time — the course-wide Model 1 section further down isn't
-// quiz-scoped (its indicators are per-student, not per-quiz-slot), so this
-// selector only ever affects Diagnostics/Model 2 content.
+// Narrows Model 2/Diagnostics (both per-question) to one quiz at a time —
+// Model 1 isn't quiz-scoped (its indicators are per-student), so it's
+// rendered above, before this selector even exists.
 $quizid = optional_param('quizid', 0, PARAM_INT);
 $quiznames = $DB->get_records_menu('quiz', ['course' => $courseid], '', 'id, name');
 
@@ -119,7 +138,7 @@ if (count($quizidsinslots) > 1) {
         $quizoptions[$slotquizid] = format_string($quiznames[$slotquizid] ?? get_string('unknownquiz', 'local_stackanalytics'));
     }
     $quizselector = new single_select(
-        new moodle_url('/local/stackanalytics/index.php', ['id' => $courseid]),
+        new moodle_url('/local/stackanalytics/index.php', ['id' => $courseid, 'view' => $view]),
         'quizid',
         $quizoptions,
         $quizid,
@@ -133,13 +152,15 @@ if ($quizid !== 0) {
     $slots = array_filter($slots, fn($slot) => (int) $slot->quizid === $quizid);
 }
 
-echo html_writer::tag('a', '', ['id' => 'stackanalytics-model2']);
-echo $OUTPUT->heading(get_string('model2heading', 'local_stackanalytics'), 3);
-echo html_writer::tag('p', get_string('model2intro', 'local_stackanalytics'));
-echo dashboard_renderer::render_model2_about();
-echo dashboard_renderer::render_model2_table(model2_report::build($courseid, $quizid !== 0 ? $quizid : null));
+if ($view === 'model2') {
+    echo $OUTPUT->heading(get_string('model2heading', 'local_stackanalytics'), 3);
+    echo html_writer::tag('p', get_string('model2intro', 'local_stackanalytics'));
+    echo dashboard_renderer::render_model2_about();
+    echo dashboard_renderer::render_model2_table(model2_report::build($courseid, $quizid !== 0 ? $quizid : null));
+    echo $OUTPUT->footer();
+    exit;
+}
 
-echo html_writer::tag('a', '', ['id' => 'stackanalytics-diagnostics']);
 echo $OUTPUT->heading(get_string('diagnosticsheading', 'local_stackanalytics'), 3);
 echo html_writer::tag('p', get_string('diagnosticsintro', 'local_stackanalytics'));
 
@@ -160,26 +181,10 @@ $questionnames = $questionids
     ? array_map(fn($q) => $q->name, $DB->get_records_list('question', 'id', $questionids, '', 'id, name'))
     : [];
 
-// Jump-to links for the per-question blocks below — the same anchor ids
-// the heading loop sets on each block's heading.
-if (count($slots) > 1) {
-    $jumplinks = [];
-    foreach ($slots as $slot) {
-        $questionname = $questionnames[$slot->questionid] ?? get_string('unknownquestion', 'local_stackanalytics');
-        $jumplinks[] = html_writer::link('#stackanalytics-slot-' . $slot->id, format_string($questionname));
-    }
-    echo html_writer::tag(
-        'p',
-        get_string('jumptoquestion', 'local_stackanalytics') . ' ' . implode(' · ', $jumplinks),
-        ['class' => 'text-muted']
-    );
-}
-
 foreach ($slots as $slot) {
     $questionname = $questionnames[$slot->questionid] ?? get_string('unknownquestion', 'local_stackanalytics');
     $quizname = $quiznames[$slot->quizid] ?? get_string('unknownquiz', 'local_stackanalytics');
 
-    echo html_writer::tag('a', '', ['id' => 'stackanalytics-slot-' . $slot->id]);
     echo $OUTPUT->heading(format_string($questionname) . ' — ' . format_string($quizname), 4);
 
     // Seed bias.

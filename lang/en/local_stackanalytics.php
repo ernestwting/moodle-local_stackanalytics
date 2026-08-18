@@ -57,8 +57,8 @@ $string['target:questionneedsreview'] = 'STACK question/PRT needs review';
 $string['dashboardtitle'] = 'STACK Analytics Dashboard';
 $string['courseselectorlabel'] = 'Course:';
 $string['quizselectorlabel'] = 'Quiz:';
+$string['viewselectorlabel'] = 'View:';
 $string['allquizzes'] = 'All quizzes';
-$string['jumptoquestion'] = 'Jump to:';
 $string['seedbiasheading'] = 'Seed bias (one-way ANOVA across random seeds)';
 $string['bloatedtreeheading'] = 'PRT branch coverage';
 $string['seedgroups'] = 'Distinct seeds observed';
@@ -131,11 +131,8 @@ $string['diagnosticsheading'] = 'Diagnostics Dashboard';
 $string['diagnosticsintro'] = 'Statistical reports that don\'t fit either model above — not predictions, just direct calculations from the same attempt data.';
 $string['conceptdependencynote'] = 'Concept-dependency mapping (finding which questions\' failures tend to predict failures on others) isn\'t implemented in this plugin yet — the architecture doc frames it as offline sequence-mining work outside a live dashboard page, not something to half-build here. Noted so it doesn\'t just silently not appear.';
 
-// Section jump nav (index.php), shown once all three sections exist.
-$string['jumptosection'] = 'Jump to section:';
-
-// Top-of-page framing (index.php) — read before the three sections below.
-$string['pageintro'] = '<strong>Model 1</strong> looks at each student\'s behaviour, to flag who might be at risk of not passing. <strong>Model 2</strong> looks at each question\'s marking logic (its PRT), to flag ones that might be worth a teacher\'s review. <strong>Diagnostics Dashboard</strong> is a set of statistical reports that don\'t fit either model — not predictions, just direct calculations from the same attempt data.';
+// Top-of-page framing (index.php) — read before picking a view below.
+$string['pageintro'] = '<strong>Model 1</strong> looks at each student\'s behaviour, to flag who might be at risk of not passing. <strong>Model 2</strong> looks at each question\'s marking logic (its PRT), to flag ones that might be worth a teacher\'s review. <strong>Diagnostics Dashboard</strong> is a set of statistical reports that don\'t fit either model — not predictions, just direct calculations from the same attempt data. Use the "View:" selector below to switch between them.';
 $string['pageintrolivedata'] = 'Both models ship disabled by default, so everything below is a live reading of each signal today, not a trained AI prediction. An administrator can enable and train a model under Site Administration > Analytics > Models — once trained, real predictions appear alongside this page in Moodle\'s own Insights report.';
 $string['responsibleusecallout'] = 'A few things worth keeping in mind when reading the flags below: they\'re statistical patterns, not proof of anything — an "anomalous" response time is a prompt to check in with a student, not evidence of misconduct on its own. Small courses will show noisier, less reliable readings simply from having fewer data points to work from. And every number here is about what a student did in this course, not who they are.';
 
