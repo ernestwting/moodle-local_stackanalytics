@@ -84,16 +84,59 @@ if (empty($slots)) {
     exit;
 }
 
+// Narrows the (potentially very long) per-question Diagnostics section below
+// to one quiz at a time — the course-wide Model 1 section further down isn't
+// quiz-scoped (its indicators are per-student, not per-quiz-slot), so this
+// selector only ever affects Diagnostics/Model 2 content.
+$quizid = optional_param('quizid', 0, PARAM_INT);
 $quiznames = $DB->get_records_menu('quiz', ['course' => $courseid], '', 'id, name');
+
+$quizidsinslots = array_unique(array_map(fn($slot) => (int) $slot->quizid, $slots));
+if (count($quizidsinslots) > 1) {
+    $quizoptions = [];
+    foreach ($quizidsinslots as $slotquizid) {
+        $quizoptions[$slotquizid] = format_string($quiznames[$slotquizid] ?? get_string('unknownquiz', 'local_stackanalytics'));
+    }
+    $quizselector = new single_select(
+        new moodle_url('/local/stackanalytics/index.php', ['id' => $courseid]),
+        'quizid',
+        $quizoptions,
+        $quizid,
+        [0 => get_string('allquizzes', 'local_stackanalytics')]
+    );
+    $quizselector->label = get_string('quizselectorlabel', 'local_stackanalytics');
+    echo $OUTPUT->render($quizselector);
+}
+
+if ($quizid !== 0) {
+    $slots = array_filter($slots, fn($slot) => (int) $slot->quizid === $quizid);
+}
+
 $questionids = array_unique(array_map(fn($slot) => (int) $slot->questionid, $slots));
 $questionnames = $questionids
     ? array_map(fn($q) => $q->name, $DB->get_records_list('question', 'id', $questionids, '', 'id, name'))
     : [];
 
+// Jump-to links for the per-question blocks below — the same anchor ids
+// the heading loop sets on each block's heading.
+if (count($slots) > 1) {
+    $jumplinks = [];
+    foreach ($slots as $slot) {
+        $questionname = $questionnames[$slot->questionid] ?? get_string('unknownquestion', 'local_stackanalytics');
+        $jumplinks[] = html_writer::link('#stackanalytics-slot-' . $slot->id, format_string($questionname));
+    }
+    echo html_writer::tag(
+        'p',
+        get_string('jumptoquestion', 'local_stackanalytics') . ' ' . implode(' · ', $jumplinks),
+        ['class' => 'text-muted']
+    );
+}
+
 foreach ($slots as $slot) {
     $questionname = $questionnames[$slot->questionid] ?? get_string('unknownquestion', 'local_stackanalytics');
     $quizname = $quiznames[$slot->quizid] ?? get_string('unknownquiz', 'local_stackanalytics');
 
+    echo html_writer::tag('a', '', ['id' => 'stackanalytics-slot-' . $slot->id]);
     echo $OUTPUT->heading(format_string($questionname) . ' — ' . format_string($quizname), 4);
 
     // Seed bias.

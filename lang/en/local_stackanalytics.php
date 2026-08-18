@@ -56,6 +56,9 @@ $string['target:questionneedsreview'] = 'STACK question/PRT needs review';
 // each.
 $string['dashboardtitle'] = 'STACK Analytics Dashboard';
 $string['courseselectorlabel'] = 'Course:';
+$string['quizselectorlabel'] = 'Quiz:';
+$string['allquizzes'] = 'All quizzes';
+$string['jumptoquestion'] = 'Jump to:';
 $string['seedbiasheading'] = 'Seed bias (one-way ANOVA across random seeds)';
 $string['bloatedtreeheading'] = 'PRT branch coverage';
 $string['seedgroups'] = 'Distinct seeds observed';
