@@ -165,7 +165,11 @@ class dashboard_renderer {
         );
 
         foreach ($report->rows as $row) {
-            $questioncell = s($row->questionname) . \html_writer::tag('div', s($row->quizname), ['class' => 'small text-muted']);
+            $questioncell = \html_writer::tag('strong', s($row->questionname)) . \html_writer::tag('div', get_string(
+                'quizlabel',
+                'local_stackanalytics',
+                s($row->quizname)
+            ), ['class' => 'small text-muted']);
             $tablerow = [$questioncell, self::render_needs_review($row->needsreview)];
             foreach (self::MODEL2_INDICATORS as $indicatorkey => $stringsuffix) {
                 $tablerow[] = self::render_indicator_cell($row->indicators[$indicatorkey], 'model2sentence_' . $stringsuffix);
@@ -281,7 +285,9 @@ class dashboard_renderer {
         foreach ($report->rows as $row) {
             $summary = \html_writer::tag('summary', implode(' ', [
                 \html_writer::tag('strong', s($row->questionname)),
-                \html_writer::tag('span', s($row->quizname), ['class' => 'text-muted small']),
+                \html_writer::tag('span', get_string('quizlabel', 'local_stackanalytics', s($row->quizname)), [
+                    'class' => 'text-muted small',
+                ]),
                 self::render_seed_bias_badge($row->seedbias),
                 self::render_bloated_tree_badge($row->bloatedtree),
             ]));

@@ -109,10 +109,12 @@ $string['model1sentence_feedbackrevisiondistance'] = 'Changes their answer by {$
 
 // Model 2 dashboard section (index.php).
 $string['model2heading'] = 'Model 2: Question & PRT Quality';
-$string['model2intro'] = 'Flags STACK questions (and their PRT trees — the branching logic that grades each answer) that may be worth an instructor\'s review, from four signals in how students actually answer them.';
+$string['model2intro'] = 'One row per STACK question (with the quiz it belongs to shown underneath), flagging ones that may be worth an instructor\'s review from four signals in how students actually answer them — including their PRT, the step-by-step marking logic that checks the answer and gives feedback.';
 $string['model2aboutbody'] = 'What\'s actually predicted (the "target") is: does this question\'s pass rate fall below a threshold (50% by default, an admin setting)? The four indicators below are the evidence a trained model would use for that — today, before any model is trained, this page just shows each indicator\'s current reading directly. Note: this pass-rate read and the difficulty indicator both ultimately come from the same pass rate, so treat "needs review" and "difficult" as related, not independent, signals.';
 $string['model2noquestions'] = 'No STACK questions to show for this selection.';
 $string['columnquestion'] = 'Question';
+$string['quizlabel'] = 'Quiz: {$a}';
+$string['quizoptionlabel'] = '{$a->name} ({$a->count} STACK question(s))';
 $string['needsreviewyes'] = 'Needs review — {$a->passpercent}% pass rate, below the {$a->thresholdpercent}% threshold';
 $string['needsreviewno'] = 'No flag — {$a->passpercent}% pass rate, at or above the {$a->thresholdpercent}% threshold';
 
@@ -128,7 +130,7 @@ $string['model2sentence_feedbackineffectiveness'] = '{$a->improvepercent}% impro
 // Diagnostics Dashboard section (index.php) — statistical/descriptive, not
 // part of either model's ML pipeline (architecture doc §3.1).
 $string['diagnosticsheading'] = 'Diagnostics Dashboard';
-$string['diagnosticsintro'] = 'Statistical reports that don\'t fit either model above — not predictions, just direct calculations from the same attempt data.';
+$string['diagnosticsintro'] = 'Two checks per STACK question, listed below with the quiz it belongs to. Every time a student attempts a STACK question, Moodle picks a random "seed" that changes its numbers (e.g. different coefficients) while keeping the same structure — <strong>Seed bias</strong> checks whether some of those seed variants are unfairly harder or easier than others, so a low grade isn\'t just "you got the harder version". Each STACK question also grades answers through a PRT (its step-by-step marking/feedback logic, made of "branches" for different right/wrong paths) — <strong>PRT branch coverage</strong> checks whether some of those branches have ever actually been triggered by a real student answer; a branch that\'s never reached is either working feedback nobody\'s needed yet, or dead logic worth simplifying. A "Worth a look" badge is a prompt to open that question and check it makes sense for how you designed it, not proof something is broken. Click a question below to see the full numbers behind its badges.';
 $string['conceptdependencynote'] = 'Concept-dependency mapping (finding which questions\' failures tend to predict failures on others) isn\'t implemented in this plugin yet — the architecture doc frames it as offline sequence-mining work outside a live dashboard page, not something to half-build here. Noted so it doesn\'t just silently not appear.';
 $string['diagnosticsnoquestions'] = 'No STACK questions to show for this selection.';
 $string['diagnosticsseedbiassentence'] = 'η²={$a->etasquared} ({$a->magnitude})';

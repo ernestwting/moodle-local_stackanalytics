@@ -79,7 +79,7 @@ if (count($viewablecourses) > 1) {
         null
     );
     $courseselector->label = get_string('courseselectorlabel', 'local_stackanalytics');
-    echo $OUTPUT->render($courseselector);
+    echo html_writer::div($OUTPUT->render($courseselector), 'd-inline-block mr-4 mb-3');
 }
 
 $slots = stack_course_helper::get_course_stack_slots($courseid);
@@ -111,9 +111,9 @@ $viewselector = new single_select(
     null
 );
 $viewselector->label = get_string('viewselectorlabel', 'local_stackanalytics');
-echo $OUTPUT->render($viewselector);
+echo html_writer::div($OUTPUT->render($viewselector), 'd-inline-block mb-3');
 
-echo html_writer::div(get_string('responsibleusecallout', 'local_stackanalytics'), 'alert alert-warning');
+echo html_writer::div(get_string('responsibleusecallout', 'local_stackanalytics'), 'alert alert-warning mt-2');
 
 // Narrows Model 2/Diagnostics (both per-question) to one quiz at a time —
 // Model 1 isn't quiz-scoped (its indicators are per-student), so this
@@ -127,13 +127,23 @@ if ($view === 'model1') {
     echo dashboard_renderer::render_model1_table(model1_report::build($courseid));
 } else {
     $quiznames = $DB->get_records_menu('quiz', ['course' => $courseid], '', 'id, name');
-    $quizidsinslots = array_unique(array_map(fn($slot) => (int) $slot->quizid, $slots));
-    if (count($quizidsinslots) > 1) {
+    $slotsperquiz = [];
+    foreach ($slots as $slot) {
+        $slotsperquiz[(int) $slot->quizid] = ($slotsperquiz[(int) $slot->quizid] ?? 0) + 1;
+    }
+    if (count($slotsperquiz) > 1) {
+        // Each option names both the quiz and how many STACK questions it
+        // has, so the list reads as "this quiz, with this much STACK
+        // content" rather than a bare, unfamiliar-looking name.
         $quizoptions = [];
-        foreach ($quizidsinslots as $slotquizid) {
-            $quizoptions[$slotquizid] =
-                format_string($quiznames[$slotquizid] ?? get_string('unknownquiz', 'local_stackanalytics'));
+        foreach ($slotsperquiz as $slotquizid => $questioncount) {
+            $quizname = format_string($quiznames[$slotquizid] ?? get_string('unknownquiz', 'local_stackanalytics'));
+            $quizoptions[$slotquizid] = get_string('quizoptionlabel', 'local_stackanalytics', (object) [
+                'name' => $quizname,
+                'count' => $questioncount,
+            ]);
         }
+        asort($quizoptions);
         $quizselector = new single_select(
             new moodle_url('/local/stackanalytics/index.php', ['id' => $courseid, 'view' => $view]),
             'quizid',
@@ -142,7 +152,7 @@ if ($view === 'model1') {
             [0 => get_string('allquizzes', 'local_stackanalytics')]
         );
         $quizselector->label = get_string('quizselectorlabel', 'local_stackanalytics');
-        echo $OUTPUT->render($quizselector);
+        echo html_writer::div($OUTPUT->render($quizselector), 'd-inline-block mb-3');
     } else {
         $quizid = 0; // Only one quiz in this course — nothing to filter.
     }
@@ -160,7 +170,7 @@ if ($view === 'model1') {
             echo html_writer::tag(
                 'p',
                 get_string('conceptdependencynote', 'local_stackanalytics'),
-                ['class' => 'text-muted small']
+                ['class' => 'text-muted small mb-3']
             );
         }
 
