@@ -264,6 +264,146 @@ class dashboard_renderer {
     }
 
     /**
+     * The Diagnostics section: one collapsed-by-default <details> block per
+     * question, its <summary> line showing both badges so every question is
+     * scannable without expanding anything — the full seed-bias/branch-
+     * coverage tables sit inside, expandable on demand.
+     *
+     * @param \stdClass $report diagnostics_report::build()'s return value
+     * @return string
+     */
+    public static function render_diagnostics_section(\stdClass $report): string {
+        if (empty($report->rows)) {
+            return \html_writer::tag('p', get_string('diagnosticsnoquestions', 'local_stackanalytics'), ['class' => 'text-muted']);
+        }
+
+        $html = '';
+        foreach ($report->rows as $row) {
+            $summary = \html_writer::tag('summary', implode(' ', [
+                \html_writer::tag('strong', s($row->questionname)),
+                \html_writer::tag('span', s($row->quizname), ['class' => 'text-muted small']),
+                self::render_seed_bias_badge($row->seedbias),
+                self::render_bloated_tree_badge($row->bloatedtree),
+            ]));
+            $body = \html_writer::div(
+                self::render_seed_bias_detail($row->seedbias) . self::render_bloated_tree_detail($row->bloatedtree),
+                'mt-2 ml-3'
+            );
+            $html .= \html_writer::tag('details', $summary . $body, ['class' => 'mb-2']);
+        }
+
+        if ($report->truncated) {
+            $html .= self::truncated_notice(count($report->rows), $report->total);
+        }
+        return $html;
+    }
+
+    /**
+     * The seed-bias effect-size badge shown in a question's collapsed summary line.
+     *
+     * @param \stdClass|null $seedbias diagnostics_report's seed-bias summary, or null
+     * @return string
+     */
+    private static function render_seed_bias_badge(?\stdClass $seedbias): string {
+        if ($seedbias === null) {
+            return \html_writer::tag(
+                'span',
+                get_string('notenoughdata', 'local_stackanalytics'),
+                ['class' => 'text-muted small']
+            );
+        }
+        $badgeclass = self::BAND_CLASSES[$seedbias->band] ?? self::BAND_CLASSES['neutral'];
+        return \html_writer::tag('span', get_string('diagnosticsseedbiassentence', 'local_stackanalytics', (object) [
+            'etasquared' => format_float($seedbias->anova->etasquared, 3),
+            'magnitude' => get_string('etamagnitude_' . $seedbias->magnitude, 'local_stackanalytics'),
+        ]), ['class' => 'badge ' . $badgeclass]);
+    }
+
+    /**
+     * The branch-coverage badge shown in a question's collapsed summary line.
+     *
+     * @param \stdClass|null $bloatedtree diagnostics_report's branch-coverage summary, or null
+     * @return string
+     */
+    private static function render_bloated_tree_badge(?\stdClass $bloatedtree): string {
+        if ($bloatedtree === null) {
+            return \html_writer::tag(
+                'span',
+                get_string('notenoughdata', 'local_stackanalytics'),
+                ['class' => 'text-muted small']
+            );
+        }
+        $badgeclass = self::BAND_CLASSES[$bloatedtree->band] ?? self::BAND_CLASSES['neutral'];
+        return \html_writer::tag('span', get_string('diagnosticsbloatedtreesentence', 'local_stackanalytics', (object) [
+            'unreached' => $bloatedtree->unreachedcount,
+            'total' => $bloatedtree->totalbranches,
+        ]), ['class' => 'badge ' . $badgeclass]);
+    }
+
+    /**
+     * The full seed-bias ANOVA table, or a muted "not enough data" note.
+     *
+     * @param \stdClass|null $seedbias
+     * @return string
+     */
+    private static function render_seed_bias_detail(?\stdClass $seedbias): string {
+        $heading = \html_writer::tag('h6', get_string('seedbiasheading', 'local_stackanalytics'));
+        if ($seedbias === null) {
+            return $heading . \html_writer::tag(
+                'p',
+                get_string('notenoughdata', 'local_stackanalytics'),
+                ['class' => 'text-muted small']
+            );
+        }
+
+        $anova = $seedbias->anova;
+        $table = new \html_table();
+        $table->data = [
+            [get_string('seedgroups', 'local_stackanalytics'), $anova->ngroups],
+            ['F', $anova->f !== null ? format_float($anova->f, 3) : get_string('notavailable', 'local_stackanalytics')],
+            ['η²', format_float($anova->etasquared, 3) . ' (' . get_string(
+                'etamagnitude_' . $seedbias->magnitude,
+                'local_stackanalytics'
+            ) . ')'],
+        ];
+        return $heading . \html_writer::table($table);
+    }
+
+    /**
+     * The full PRT branch-coverage table, or a muted "not enough data" note.
+     *
+     * @param \stdClass|null $bloatedtree
+     * @return string
+     */
+    private static function render_bloated_tree_detail(?\stdClass $bloatedtree): string {
+        $heading = \html_writer::tag('h6', get_string('bloatedtreeheading', 'local_stackanalytics'));
+        if ($bloatedtree === null) {
+            return $heading . \html_writer::tag(
+                'p',
+                get_string('notenoughdata', 'local_stackanalytics'),
+                ['class' => 'text-muted small']
+            );
+        }
+
+        $table = new \html_table();
+        $table->head = [
+            get_string('node', 'local_stackanalytics'),
+            get_string('branch', 'local_stackanalytics'),
+            get_string('traversals', 'local_stackanalytics'),
+            get_string('coverage', 'local_stackanalytics'),
+        ];
+        foreach ($bloatedtree->branches as $branch) {
+            $table->data[] = [
+                s($branch->nodename),
+                s($branch->branch),
+                $branch->count,
+                get_string('coverage_' . $branch->classification, 'local_stackanalytics'),
+            ];
+        }
+        return $heading . \html_writer::table($table);
+    }
+
+    /**
      * A native, JS-free collapsible panel (no styling dependency beyond the
      * theme's own <details> rendering).
      *

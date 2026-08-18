@@ -40,11 +40,10 @@
 require_once(__DIR__ . '/../../config.php');
 
 use local_stackanalytics\local\stack_course_helper;
-use local_stackanalytics\diagnostics\seed_bias_report;
-use local_stackanalytics\diagnostics\bloated_tree_report;
 use local_stackanalytics\diagnostics\concept_dependency_report;
 use local_stackanalytics\analytics\report\model1_report;
 use local_stackanalytics\analytics\report\model2_report;
+use local_stackanalytics\analytics\report\diagnostics_report;
 use local_stackanalytics\output\dashboard_renderer;
 
 $courseid = required_param('id', PARAM_INT);
@@ -168,77 +167,6 @@ if (!concept_dependency_report::is_available()) {
     echo html_writer::tag('p', get_string('conceptdependencynote', 'local_stackanalytics'), ['class' => 'text-muted small']);
 }
 
-// Soft cap, same purpose as model1_report::MAX_ROWS/model2_report::MAX_ROWS —
-// a course with many STACK questions shouldn't make this page unusably slow.
-$diagnosticsslotstotal = count($slots);
-$maxdiagnosticsslots = 100;
-if ($diagnosticsslotstotal > $maxdiagnosticsslots) {
-    $slots = array_slice($slots, 0, $maxdiagnosticsslots, true);
-}
-
-$questionids = array_unique(array_map(fn($slot) => (int) $slot->questionid, $slots));
-$questionnames = $questionids
-    ? array_map(fn($q) => $q->name, $DB->get_records_list('question', 'id', $questionids, '', 'id, name'))
-    : [];
-
-foreach ($slots as $slot) {
-    $questionname = $questionnames[$slot->questionid] ?? get_string('unknownquestion', 'local_stackanalytics');
-    $quizname = $quiznames[$slot->quizid] ?? get_string('unknownquiz', 'local_stackanalytics');
-
-    echo $OUTPUT->heading(format_string($questionname) . ' — ' . format_string($quizname), 4);
-
-    // Seed bias.
-    $seedgroups = seed_bias_report::get_seed_score_groups((int) $slot->quizid, (int) $slot->questionid);
-    $anova = seed_bias_report::anova($seedgroups);
-
-    echo html_writer::tag('h5', get_string('seedbiasheading', 'local_stackanalytics'));
-    if ($anova === null) {
-        echo html_writer::tag('p', get_string('notenoughdata', 'local_stackanalytics'), ['class' => 'text-muted']);
-    } else {
-        $rows = [
-            [get_string('seedgroups', 'local_stackanalytics'), $anova->ngroups],
-            ['F', $anova->f !== null ? format_float($anova->f, 3) : get_string('notavailable', 'local_stackanalytics')],
-            ['η²', format_float($anova->etasquared, 3) . ' (' . get_string(
-                'etamagnitude_' . seed_bias_report::eta_squared_magnitude($anova->etasquared),
-                'local_stackanalytics'
-            ) . ')'],
-        ];
-        $table = new html_table();
-        $table->data = $rows;
-        echo html_writer::table($table);
-    }
-
-    // Bloated tree / branch coverage.
-    $branches = bloated_tree_report::build_report((int) $slot->quizid, (int) $slot->questionid);
-
-    echo html_writer::tag('h5', get_string('bloatedtreeheading', 'local_stackanalytics'));
-    if (empty($branches)) {
-        echo html_writer::tag('p', get_string('notenoughdata', 'local_stackanalytics'), ['class' => 'text-muted']);
-    } else {
-        $table = new html_table();
-        $table->head = [
-            get_string('node', 'local_stackanalytics'),
-            get_string('branch', 'local_stackanalytics'),
-            get_string('traversals', 'local_stackanalytics'),
-            get_string('coverage', 'local_stackanalytics'),
-        ];
-        foreach ($branches as $branch) {
-            $table->data[] = [
-                s($branch->nodename),
-                s($branch->branch),
-                $branch->count,
-                get_string('coverage_' . $branch->classification, 'local_stackanalytics'),
-            ];
-        }
-        echo html_writer::table($table);
-    }
-}
-
-if ($diagnosticsslotstotal > $maxdiagnosticsslots) {
-    echo html_writer::tag('p', get_string('truncatednotice', 'local_stackanalytics', (object) [
-        'shown' => count($slots),
-        'total' => $diagnosticsslotstotal,
-    ]), ['class' => 'text-muted small']);
-}
+echo dashboard_renderer::render_diagnostics_section(diagnostics_report::build($courseid, $quizid !== 0 ? $quizid : null));
 
 echo $OUTPUT->footer();

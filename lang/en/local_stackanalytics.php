@@ -130,6 +130,9 @@ $string['model2sentence_feedbackineffectiveness'] = '{$a->improvepercent}% impro
 $string['diagnosticsheading'] = 'Diagnostics Dashboard';
 $string['diagnosticsintro'] = 'Statistical reports that don\'t fit either model above — not predictions, just direct calculations from the same attempt data.';
 $string['conceptdependencynote'] = 'Concept-dependency mapping (finding which questions\' failures tend to predict failures on others) isn\'t implemented in this plugin yet — the architecture doc frames it as offline sequence-mining work outside a live dashboard page, not something to half-build here. Noted so it doesn\'t just silently not appear.';
+$string['diagnosticsnoquestions'] = 'No STACK questions to show for this selection.';
+$string['diagnosticsseedbiassentence'] = 'η²={$a->etasquared} ({$a->magnitude})';
+$string['diagnosticsbloatedtreesentence'] = '{$a->unreached} of {$a->total} branch(es) never reached';
 
 // Top-of-page framing (index.php) — read before picking a view below.
 $string['pageintro'] = '<strong>Model 1</strong> looks at each student\'s behaviour, to flag who might be at risk of not passing. <strong>Model 2</strong> looks at each question\'s marking logic (its PRT), to flag ones that might be worth a teacher\'s review. <strong>Diagnostics Dashboard</strong> is a set of statistical reports that don\'t fit either model — not predictions, just direct calculations from the same attempt data. Use the "View:" selector below to switch between them.';
